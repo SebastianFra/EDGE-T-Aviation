@@ -16,10 +16,9 @@
 #' @importFrom magclass getSets
 #' @export
 
-
 generateEDGEdata <- function(input_folder, output_folder,
                              EDGE_scenario, REMIND_scenario="SSP2",
-                             saveRDS=FALSE){
+                             saveRDS=FALSE, COVID_scenario=TRUE){
 
   scenario <- scenario_name <- vehicle_type <- type <- `.` <- CountryCode <- RegionCode <- NULL
   
@@ -73,6 +72,7 @@ generateEDGEdata <- function(input_folder, output_folder,
   smartlifestyle <- EDGEscenarios[options== "smartlifestyle", switch]
   print(paste0("You selected the option to include lifestyle changes to: ", smartlifestyle))
 
+
   if (EDGE_scenario %in% c("ConvCase", "ConvCaseWise")) {
     techswitch <- "Liquids"
   } else if (EDGE_scenario %in% c("ElecEra", "ElecEraWise")) {
@@ -86,6 +86,7 @@ generateEDGEdata <- function(input_folder, output_folder,
 
   print(paste0("You selected the ", EDGE_scenario, " transport scenario."))
   print(paste0("You selected the ", REMIND_scenario, " socio-economic scenario."))
+  print(paste0("You selected the COVID scenario to be  ",COVID_scenario,"."))
 
   #################################################
   ## LVL 0 scripts
@@ -128,12 +129,14 @@ generateEDGEdata <- function(input_folder, output_folder,
   UCD_output$non_energy_cost$non_energy_cost_split = correctedOutput$NEcost$non_energy_cost_split
   VOT_lambdas$logit_output = correctedOutput$logitexp
 
+ 
+  
+
   if(saveRDS){
     saveRDS(GCAM_data, file = level0path("GCAM_data.RDS"))
     saveRDS(UCD_output, file = level0path("UCD_output.RDS"))
     saveRDS(VOT_lambdas, file = level0path("logit_exp.RDS"))
   }
-
 
   ## produce ISO versions of all files. No conversion of units happening.
   print("-- generate ISO level data")
@@ -145,6 +148,7 @@ generateEDGEdata <- function(input_folder, output_folder,
     GCAM2ISO_MAPPING = GCAM2ISO_MAPPING,
     EDGE_scenario = EDGE_scenario,
     REMIND_scenario = REMIND_scenario)
+ 
 
   ## includes demand from the TRACCS-country level data if needed (has to happen on ISO level)
   if (merge_traccs == TRUE) {
@@ -210,10 +214,10 @@ generateEDGEdata <- function(input_folder, output_folder,
     intensity_data = intensity_gcam,
     nonfuel_costs = iso_data$iso_UCD_results$nec_iso[type == "normal"][, type := NULL],
     module = "edge_esm")
-
+  
   if(saveRDS)
     saveRDS(REMIND_prices, file = level1path("full_prices.RDS"))
-
+  
 
   print("-- EDGE calibration")
   ## two options of calibration: one is on partially on inconvenience costs and partially on preferences, the other is exclusively on preferences
@@ -320,13 +324,15 @@ generateEDGEdata <- function(input_folder, output_folder,
   shares <- logit_data[["share_list"]] ## shares of alternatives for each level of the logit function
   mj_km_data <- logit_data[["mj_km_data"]] ## energy intensity at a technology level
   prices <- logit_data[["prices_list"]] ## prices at each level of the logit function, 1990USD/pkm
-
-  ## regression demand calculation
+  ## regression demand calculation  #tech_output_adj = iso_data$iso_GCAMdata_results[["tech_output_adj"]],
   print("-- performing demand regression")
-  dem_regr = lvl2_demandReg(tech_output = iso_data$iso_GCAMdata_results[["tech_output"]], 
-                          price_baseline = prices$S3S, 
-                          REMIND_scenario = REMIND_scenario, 
-                          smartlifestyle = smartlifestyle)
+  dem_regr = lvl2_demandReg(tech_output = iso_data$iso_GCAMdata_results[["tech_output"]],
+                            tech_output_adj = iso_data$iso_GCAMdata_results[["tech_output_adj"]],
+                            tech_output_adj_covid = iso_data$iso_GCAMdata_results[["tech_output_adj_covid"]],
+                            price_baseline = prices$S3S, 
+                            REMIND_scenario = REMIND_scenario, 
+                            smartlifestyle = smartlifestyle,
+                            COVID_scenario = COVID_scenario)
 
   if(saveRDS)
     saveRDS(dem_regr, file = level2path("demand_regression.RDS"))
@@ -383,14 +389,17 @@ generateEDGEdata <- function(input_folder, output_folder,
     capCost = budget,
     EDGE2teESmap = EDGE2teESmap,
     REMINDtall = REMINDtall)
+  
 
 
   ## calculate absolute values of demand. Final entry: demand in [trillionpkm]
+  EDGE2teESmap_new = fread(system.file("extdata", "mapping_EDGE_REMIND_transport_categories_new.csv", package = "edgeTransport"))
   demand_traj <- lvl2_REMINDdemand(regrdemand = dem_regr,
-                                   EDGE2teESmap = EDGE2teESmap,
+                                   EDGE2teESmap = EDGE2teESmap_new,
                                    REMINDtall = REMINDtall,
                                    REMIND_scenario = REMIND_scenario)
-
+  #export demand_traj elasticity trajectories
+  write_xlsx(demand_traj, "C:/Users/franz/Documents/R/Master-Thesis/EDGE-T/Export Data/demand_traj.xlsx")
   print("-- preparing complex module-friendly output files")
   ## final value: in billionspkm or billions tkm and EJ; shares are in [-]
   complexValues <- lvl2_reportingEntries(ESdem = shares_intensity_demand$demandF_plot_pkm,

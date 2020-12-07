@@ -51,7 +51,6 @@ lvl2_createCSV <- function(logit_params, sw_data, vot_data, NEC_data, demByTech,
                            REMIND_scenario, EDGE_scenario, level2path){
   MJ_km <- NULL
   gdp_scenario <- paste0("gdp_", REMIND_scenario)
-
   addScenarioCols <- function(data, nc){
     ## Add scenario cols after column nc
     ## nc == 0: Add scenarios as first cols

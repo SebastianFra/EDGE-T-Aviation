@@ -12,7 +12,7 @@
 
 lvl1_IEAharmonization <- function(tech_data){
     te <- isbunk <- flow <- value <- `.` <- iso <- EJ_Mpkm <- conv_pkm_MJ <- subsector_L3 <- technology <- EJ_Mpkm.mean <- vehicle_type <- sector <- EJ_Mpkm_ave_adjusted <- Mpkm_tot <- factor_intensity <- EJ_Mpkm_ave <- EJ_Mpkm_adjusted <- lambda <- EJ_Mpkm_final <- EJ_tot_adjusted <- NULL 
-    IEA <- calcOutput("IO", subtype = "IEA_output", aggregate = FALSE)
+   
     IEA <- IEA[, 2005, c("fedie", "fepet", "fegat", "feelt"), pmatch = TRUE]
 
     IEA_dt <- magpie2dt(IEA, datacols=c("se", "fe", "te", "mod", "flow"), regioncol="iso", yearcol="year")

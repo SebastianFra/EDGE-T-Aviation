@@ -16,7 +16,7 @@ lvl1_calibrateEDGE <- function(prices, GCAM_data, logit_exp_data, vot_data, pric
     opt_func <- function(x, pri, sha, lamb){
         sha*sum(x*pri^lamb)/min(pri^lamb) - x*pri^lamb/min(pri^lamb)
     }
-
+    browser()
     jacobian <- function(x, pri, sha, lamb){
         matrix(sha) %*% t(matrix(pri))/min(pri^lamb) - pri * diag(length(pri))/min(pri^lamb)
     }

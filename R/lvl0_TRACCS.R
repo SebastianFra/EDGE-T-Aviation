@@ -251,6 +251,7 @@ lvl0_loadTRACCS <- function(input_folder, TRACCS_dir = "TRACCS"){
     setnames(airp_EU,old=c("value","variable"),new=c("pkm","year"))
     airp_EU=airp_EU[,.(million_pkm=CONV_unit_million*as.numeric(pkm),country_name=name,year=as.numeric(year),code_airplane_characteristics)]
     airp_EU=airp_EU[country_name=="Austria",]
+    
     # airp_EU=airp_EU[,c_code:=paste0(country_name,"#",code_airplane_characteristics)]
     # airp_EU[,country_name:=NULL]
     # airp_EU[,code_airplane_characteristics:=NULL]
