@@ -80,6 +80,8 @@ lvl2_demandReg <- function(tech_output, tech_output_adj,tech_output_adj_covid, p
                        ycol="eps",
                        idxcols="var",
                        extrapolate = TRUE)
+  iso_mapping <-read_csv("C:/Users/franz/Documents/R/Master-Thesis/EDGE-T/Export Data/regionmappingR10.csv")
+  price_el<-merge( price_el, iso_mapping[,c(2,3)], by = c("iso"), all.x=TRUE)
   
   #adjust only the international aviation
   price_el_int_aviation_L <- price_el[var == "income_elasticity_pass_lo_L"]
@@ -88,13 +90,16 @@ lvl2_demandReg <- function(tech_output, tech_output_adj,tech_output_adj_covid, p
   #define tresholds and decay rate
   #Treshold_Decayrate_data = fread(file.path("C:/Users/franz/Documents/R/Master Thesis/Export Data/Treshold_Decayrate_scenarios.csv"), sep=",", header = T)
   #couple decay rate to RPK_cap of baseline runs
-  if (COVID_scenario == TRUE){
-  RPK_cap_baseline_L = fread(file.path("C:/Users/franz/Documents/R/Master-Thesis/EDGE-T/Export Data/RPK_CAP_baseline_leisure_covid.csv"), sep=",", header = T)
-  RPK_cap_baseline_B = fread(file.path("C:/Users/franz/Documents/R/Master-Thesis/EDGE-T/Export Data/RPK_CAP_baseline_business_covid.csv"), sep=",", header = T)
+  RPK_cap_baseline_L = fread(file.path("C:/Users/franz/Documents/R/Master-Thesis/EDGE-T/Export Data/RPK_CAP_baseline_leisure_master2.csv"), sep=",", header = T)
+  RPK_cap_baseline_B = fread(file.path("C:/Users/franz/Documents/R/Master-Thesis/EDGE-T/Export Data/RPK_CAP_baseline_business_master2.csv"), sep=",", header = T)
+  'if (COVID_scenario == TRUE){
+  RPK_cap_baseline_L = fread(file.path("C:/Users/franz/Documents/R/Master-Thesis/EDGE-T/Export Data/RPK_CAP_baseline_leisure_covid_new.csv"), sep=",", header = T)
+  RPK_cap_baseline_B = fread(file.path("C:/Users/franz/Documents/R/Master-Thesis/EDGE-T/Export Data/RPK_CAP_baseline_business_covid_new.csv"), sep=",", header = T)
   } else if (COVID_scenario == FALSE){
-  RPK_cap_baseline_L = fread(file.path("C:/Users/franz/Documents/R/Master-Thesis/EDGE-T/Export Data/RPK_CAP_baseline_leisure.csv"), sep=",", header = T)
-  RPK_cap_baseline_B = fread(file.path("C:/Users/franz/Documents/R/Master-Thesis/EDGE-T/Export Data/RPK_CAP_baseline_business.csv"), sep=",", header = T)
+  RPK_cap_baseline_L = fread(file.path("C:/Users/franz/Documents/R/Master-Thesis/EDGE-T/Export Data/RPK_CAP_baseline_leisure_new.csv"), sep=",", header = T)
+  RPK_cap_baseline_B = fread(file.path("C:/Users/franz/Documents/R/Master-Thesis/EDGE-T/Export Data/RPK_CAP_baseline_business_new.csv"), sep=",", header = T)
   }else{}
+  '
   RPK_cap_baseline_L <- RPK_cap_baseline_L[scenario == REMIND_scenario]
   RPK_cap_baseline_B <- RPK_cap_baseline_B[scenario == REMIND_scenario]
   price_el_int_aviation_L_RPK = merge( price_el_int_aviation_L, RPK_cap_baseline_L[,c(1,2,5)], by = c("iso","year"),all.x = TRUE)
@@ -105,78 +110,39 @@ lvl2_demandReg <- function(tech_output, tech_output_adj,tech_output_adj_covid, p
   price_el_int_aviation_B_RPK <- price_el_int_aviation_B_RPK[,decay_rate:= 1]
   price_el_int_aviation_B_RPK <- subset(price_el_int_aviation_B_RPK, price_el_int_aviation_B_RPK$year <=2060 & price_el_int_aviation_B_RPK$year >=2020)
   #mutate the decayrate for Income elasticity Leisure
-  if (COVID_scenario == TRUE){
     if (REMIND_scenario == "SSP1") {
-      decay_DR_L=0.4
-      decay_treshold_L= 800
+      decay_DR_L=0.8
+      decay_treshold_L= 1000
     }else if (REMIND_scenario == "SSP2") {
-      decay_DR_L=0.6
-      decay_treshold_L= 1000
+      decay_DR_L=0.85
+      decay_treshold_L= 1100
     }else if (REMIND_scenario == "SSP3") {
-      decay_DR_L=0.6
-      decay_treshold_L= 1000
+      decay_DR_L=0.85
+      decay_treshold_L= 1100
     }else if (REMIND_scenario == "SSP4") {
-      decay_DR_L=0.6
-      decay_treshold_L= 1000
+      decay_DR_L=0.85
+      decay_treshold_L= 1100
     }else if (REMIND_scenario == "SSP5") {
-      decay_DR_L=0.65
+      decay_DR_L=0.95
       decay_treshold_L= 1300
-  }else{}
-    }else if (COVID_scenario == FALSE){
-    if (REMIND_scenario == "SSP1") {
-      decay_DR_L=0.4
-      decay_treshold_L= 800
-    }else if (REMIND_scenario == "SSP2") {
-      decay_DR_L=0.6
-      decay_treshold_L= 1000
-    }else if (REMIND_scenario == "SSP3") {
-      decay_DR_L=0.6
-      decay_treshold_L= 1000
-    }else if (REMIND_scenario == "SSP4") {
-      decay_DR_L=0.6
-      decay_treshold_L= 1000
-    }else if (REMIND_scenario == "SSP5") {
-      decay_DR_L=0.65
-      decay_treshold_L= 1300
-    }else{}
  }else{}
-  
   #mutate the decayrate for Income elasticity Business
-  if (COVID_scenario == TRUE){
     if (REMIND_scenario == "SSP1") {
-      decay_DR_B=0.4
-      decay_treshold_B= 800
+      decay_DR_B=0.7
+      decay_treshold_B= 500
     }else if (REMIND_scenario == "SSP2") {
-      decay_DR_B=0.6
-      decay_treshold_B= 1000
+      decay_DR_B=0.75
+      decay_treshold_B= 550
     }else if (REMIND_scenario == "SSP3") {
-      decay_DR_B=0.6
-      decay_treshold_B= 1000
+      decay_DR_B=0.75
+      decay_treshold_B= 550
     }else if (REMIND_scenario == "SSP4") {
-      decay_DR_B=0.6
-      decay_treshold_B= 1000
+      decay_DR_B=0.75
+      decay_treshold_B= 550
     }else if (REMIND_scenario == "SSP5") {
-      decay_DR_B=0.65
-      decay_treshold_B= 1300
+      decay_DR_B=0.85
+      decay_treshold_B= 700
     }else{}
-  }else if (COVID_scenario == FALSE){
-    if (REMIND_scenario == "SSP1") {
-      decay_DR_B=0.4
-      decay_treshold_B= 800
-    }else if (REMIND_scenario == "SSP2") {
-      decay_DR_B=0.6
-      decay_treshold_B= 1000
-    }else if (REMIND_scenario == "SSP3") {
-      decay_DR_B=0.6
-      decay_treshold_B= 1000
-    }else if (REMIND_scenario == "SSP4") {
-      decay_DR_B=0.6
-      decay_treshold_B= 1000
-    }else if (REMIND_scenario == "SSP5") {
-      decay_DR_B=0.65
-      decay_treshold_B= 1300
-    }else{}
-  }else{}
     #Loops that adjust the decay rate of int aviation
   #Leisure Loop
   for (j in unique(price_el_int_aviation_L_RPK$iso)) {
@@ -199,7 +165,10 @@ lvl2_demandReg <- function(tech_output, tech_output_adj,tech_output_adj_covid, p
   price_el_int_aviation_L = merge(price_el_int_aviation_L, price_el_int_aviation_L_RPK, by = c("iso","year"),all.x = TRUE)
   price_el_int_aviation_B_RPK<- price_el_int_aviation_B_RPK[, c(3:11):= NULL] 
   price_el_int_aviation_B = merge(price_el_int_aviation_B, price_el_int_aviation_B_RPK, by = c("iso","year"),all.x = TRUE)
-  #replace NAs for Leisure and Business
+  #manually lower decay rate for ME,Africa and Rest ASia otherwise RPKs will be to high
+  price_el_int_aviation_L[, decay_rate := ifelse( iso_region %in% c("R10AFRICA", "R10REST_ASIA","R10MIDDLE_EAST"), decay_rate *0.75, decay_rate )]
+  price_el_int_aviation_B[, decay_rate := ifelse( iso_region %in% c("R10AFRICA", "R10REST_ASIA","R10MIDDLE_EAST"), decay_rate *0.65, decay_rate )]
+   #replace NAs for Leisure and Business
   #Leisure
   for (j in unique(price_el_int_aviation_L$iso)) {
     for (i in unique(price_el_int_aviation_L$year[price_el_int_aviation_L$iso == j])) { 
@@ -236,57 +205,31 @@ lvl2_demandReg <- function(tech_output, tech_output_adj,tech_output_adj_covid, p
   }
   #Decay of Income Elasticity
   #Leisure
-  if (COVID_scenario == TRUE){
     if (REMIND_scenario == "SSP1") {
-      GDP_treshold_L= 28000
+      GDP_treshold_L= 40000
     }else if (REMIND_scenario == "SSP2") {
-      GDP_treshold_L= 30000
+      GDP_treshold_L= 47500
     }else if (REMIND_scenario == "SSP3") {
-      GDP_treshold_L= 30000
+      GDP_treshold_L= 47500
     }else if (REMIND_scenario == "SSP4") {
-      GDP_treshold_L= 30000
+      GDP_treshold_L= 47500
     }else if (REMIND_scenario == "SSP5") {
-      GDP_treshold_L= 32500
+      GDP_treshold_L= 50000
     }else{}
-  }else if (COVID_scenario == FALSE){
-    if (REMIND_scenario == "SSP1") {
-      GDP_treshold_L= 28000
-    }else if (REMIND_scenario == "SSP2") {
-      GDP_treshold_L= 30000
-    }else if (REMIND_scenario == "SSP3") {
-      GDP_treshold_L= 30000
-    }else if (REMIND_scenario == "SSP4") {
-      GDP_treshold_L= 30000
-    }else if (REMIND_scenario == "SSP5") {
-      GDP_treshold_L= 32500
-    }else{}
-  }else{}
+
   #Business
-  if (COVID_scenario == TRUE){
     if (REMIND_scenario == "SSP1") {
-      GDP_treshold_B= 28000
+      GDP_treshold_B= 35000
     }else if (REMIND_scenario == "SSP2") {
-      GDP_treshold_B= 30000
+      GDP_treshold_B= 40000
     }else if (REMIND_scenario == "SSP3") {
-      GDP_treshold_B= 30000
+      GDP_treshold_B= 40000
     }else if (REMIND_scenario == "SSP4") {
-      GDP_treshold_B= 30000
+      GDP_treshold_B= 40000
     }else if (REMIND_scenario == "SSP5") {
-      GDP_treshold_B= 32500
+      GDP_treshold_B= 45000
     }else{}
-  }else if (COVID_scenario == FALSE){
-    if (REMIND_scenario == "SSP1") {
-      GDP_treshold_B= 28000
-    }else if (REMIND_scenario == "SSP2") {
-      GDP_treshold_B= 30000
-    }else if (REMIND_scenario == "SSP3") {
-      GDP_treshold_B= 30000
-    }else if (REMIND_scenario == "SSP4") {
-      GDP_treshold_B= 30000
-    }else if (REMIND_scenario == "SSP5") {
-      GDP_treshold_B= 32500
-    }else{}
-  }else{}
+  
   #Leisure Loop
   for (j in unique(price_el_int_aviation_L$iso)) {
     for (i in unique(price_el_int_aviation_L$year[price_el_int_aviation_L$iso == j])) { 
@@ -303,35 +246,21 @@ lvl2_demandReg <- function(tech_output, tech_output_adj,tech_output_adj_covid, p
       }
     }
   }
-  
-  
-#COVID-ADJUSTMENT: adjust the COVID-shock by setting the income elasticity very high for 2025 to model the recovery
-if (COVID_scenario == TRUE){
-    #Leisure Loop
-  for (j in unique(price_el_int_aviation_L$iso)) {
-    for (i in unique(price_el_int_aviation_L$year[price_el_int_aviation_L$iso == j])) { 
-      if (price_el_int_aviation_L$year[price_el_int_aviation_L$iso == j & price_el_int_aviation_L$year == i] == 2025){
-        price_el_int_aviation_L$eps[price_el_int_aviation_L$iso == j & price_el_int_aviation_L$year == i]<- 18.567
-      }
-    }
-  }
-  #Business Loop
-  for (j in unique(price_el_int_aviation_B$iso)) {
-    for (i in unique(price_el_int_aviation_B$year[price_el_int_aviation_B$iso == j])) { 
-      if (price_el_int_aviation_B$year[price_el_int_aviation_B$iso == j & price_el_int_aviation_B$year == i] == 2025){
-        price_el_int_aviation_B$eps[price_el_int_aviation_B$iso == j & price_el_int_aviation_B$year == i]<- 18.567
-      }
-    }
-  }
-}else{}
+  #adjust rest asia and africa otherwise it would be to high
+  price_el_int_aviation_L[, eps := ifelse( iso_region %in% c("R10AFRICA"), eps *0.75, eps )]
+  price_el_int_aviation_L[, eps := ifelse( iso_region %in% c("R10MIDDLE_EAST"), eps *0.75, eps )]
+  price_el_int_aviation_L[, eps := ifelse( iso_region %in% c("R10REST_ASIA"), eps *0.5, eps )]
+  price_el_int_aviation_B[, eps := ifelse( iso_region %in% c("R10AFRICA", "R10REST_ASIA","R10MIDDLE_EAST"), eps *0.75, eps)]
+ 
+  #drop iso_region
+  price_el_int_aviation_L[,c("iso_region", "RPK_CAP_L"):=NULL]
+  price_el_int_aviation_B[,c("iso_region","RPK_CAP_B"):=NULL]
   #export income elasticity trajectories
   write_xlsx(price_el_int_aviation_L, "C:/Users/franz/Documents/R/Master-Thesis/EDGE-T/Export Data/IE_Trajectories_Leisure.xlsx")
   write_xlsx(price_el_int_aviation_B, "C:/Users/franz/Documents/R/Master-Thesis/EDGE-T/Export Data/IE_Trajectories_Business.xlsx")
   #get correct format for merge
   price_el_int_aviation_L = dcast(price_el_int_aviation_L[,c("iso","year","var","eps", "GDP_cap")], iso + year + GDP_cap ~var, value.var = "eps")  
   price_el_int_aviation_B = dcast(price_el_int_aviation_B[,c("iso","year","var","eps", "GDP_cap")], iso + year + GDP_cap ~var, value.var = "eps")    
-  
-  
   #adjust other elasticites
   ## correct price elasticity for IND, otherwise the demand is misleadingly low
   ## https://ideas.repec.org/p/ekd/006356/7355.html
@@ -341,10 +270,7 @@ if (COVID_scenario == TRUE){
   ## correct elasticity for SSA, otherwise the demand does not grow enough as compared to other regions
   price_el[, eps := ifelse(var == "income_elasticity_pass_sm" & iso %in% c("AGO", "BDI", "BEN", "BFA", "BWA", "CAF", "CIV", "CMR", "COD", "COG", "COM", "CPV", "DJI", "ERI", "ETH", "GAB", "GHA", "GIN", "GMB", "GNB", "GNQ", "KEN", "LBR", "LSO", "MDG", "MLI", "MOZ", "MRT", "MUS", "MWI", "MYT", "NAM", "NER", "NGA", "REU", "RWA", "SEN", "SHN", "SLE", "SOM", "SSD", "STP", "SWZ", "SYC", "TCD", "TGO", "TZA", "UGA", "ZAF", "ZMB", "ZWE"), eps*1.1, eps)]
   price_el = dcast(price_el[,c("iso","year","var","eps", "GDP_cap")], iso + year + GDP_cap ~var, value.var = "eps")
-  ## correct ZAF int. aviation elasticity otherwise RPK/Cap would be misleading high
-  price_el_int_aviation_L[, income_elasticity_pass_lo_L := ifelse( iso %in% c("ZAF","KHM", "VNM", "THA", "PAK", "GHA", "IDN", "NAM", "MMR", "KHM", "LAO", "ETH"), income_elasticity_pass_lo_L *0.75, income_elasticity_pass_lo_L )]
-  price_el_int_aviation_B[, income_elasticity_pass_lo_B := ifelse( iso %in% c("ZAF","KHM", "VNM", "THA", "PAK", "GHA", "IDN", "NAM", "MMR", "KHM", "LAO", "ETH"), income_elasticity_pass_lo_B *0.75, income_elasticity_pass_lo_B )]
-  
+ 
   #merge again
   price_el = merge(price_el, price_el_int_aviation_L, by = c("iso","year"),all.x = TRUE)
   price_el = merge(price_el, price_el_int_aviation_B, by = c("iso","year"),all.x = TRUE)
@@ -423,14 +349,8 @@ if (COVID_scenario == TRUE){
   #drop int aviation
   D_star_else <- D_star[,c(8):= NULL]
   #int aviation loop with forward pushing the historic data base
-  #calculate demand at a sector level COVID
-  if (COVID_scenario == TRUE){
-  demand_tot_sector_avi_L=tech_output_adj_covid[, .(demand_tot=sum(tech_output_adj_covid)), by=c("iso", "year", "sector")]
-  demand_tot_sector_avi_B=tech_output_adj_covid[, .(demand_tot=sum(tech_output_adj_covid)), by=c("iso", "year", "sector")]
-  }else if (COVID_scenario == FALSE){
   demand_tot_sector_avi_L=tech_output_adj[, .(demand_tot=sum(tech_output_adj)), by=c("iso", "year", "sector")]
   demand_tot_sector_avi_B=tech_output_adj[, .(demand_tot=sum(tech_output_adj)), by=c("iso", "year", "sector")]
-  }else{}
   #Differentiate between different Trip Purposes in techoutput file
   #Leisure split 71%
   demand_tot_sector_avi_L[,   demand_tot := ifelse(sector == "trn_aviation_intl" ,demand_tot * 0.71, demand_tot) ]
@@ -443,13 +363,7 @@ if (COVID_scenario == TRUE){
   #merge D* and historical demand
   D_star_avi_L=merge(D_star_lvl1,demand_tot_sector_avi_L, by = c("iso","year"),all.x = TRUE)
   D_star_avi_B=merge(D_star_lvl1,demand_tot_sector_avi_B, by = c("iso","year"),all.x = TRUE)
-  
-  #COVID-ADJUSTMENT: adjust developing countries since there are too high in 2025 for covid case
-  if (COVID_scenario == TRUE){
-  D_star_avi_L[, D_star_p_lo_L := ifelse(year %in% c(2025) & D_star_p_lo_L > 6 ,6, D_star_p_lo_L) ]
-  D_star_avi_B[, D_star_p_lo_B := ifelse(year %in% c(2025) & D_star_p_lo_B > 6 ,6, D_star_p_lo_B) ]
-  } else{}
-  
+
   #Loop to calculate future demand
   i=NULL
   for (i in seq(1,length(unique(D_star_avi_L$year)),1)) {
@@ -466,18 +380,64 @@ if (COVID_scenario == TRUE){
   setnames(D_star_avi_L, "trn_aviation_intl", "trn_aviation_intl_L")
   setnames(D_star_avi_B, "trn_aviation_intl", "trn_aviation_intl_B")
   D_star_avi=merge(D_star_avi_L, D_star_avi_B,by = c("iso","year"),all.x = TRUE)
-  #Calculate total int. demand also
-  D_star_avi[,trn_aviation_intl:= trn_aviation_intl_L + trn_aviation_intl_B, by = c("iso", "year")]
   #merge two files
   D_star_final=merge(D_star_else, D_star_avi,by = c("iso","year"),all.x = TRUE)
   D_star_final <- D_star_final[, c(11,12:17,19:28,30:33):= NULL]
   ## select only the columns that contains the demand
   D_star_final[, c(3:7) := NULL]
-  
+  #COVID-ADJUSTMENT: Exogenous Shock
+ if (REMIND_scenario == "SSP1"){
+   if (COVID_scenario == TRUE){
+    D_star_final[, trn_aviation_intl_L := ifelse(year %in% c(2020) ,trn_aviation_intl_L * 0.55, trn_aviation_intl_L) ]
+    D_star_final[, trn_aviation_intl_B := ifelse(year %in% c(2020) ,trn_aviation_intl_B * 0.30, trn_aviation_intl_B) ]
+    D_star_final[, trn_aviation_intl_L := ifelse(year %in% c(2025) ,trn_aviation_intl_L * 0.8, trn_aviation_intl_L) ]
+    D_star_final[, trn_aviation_intl_B := ifelse(year %in% c(2025) ,trn_aviation_intl_B * 0.2, trn_aviation_intl_B) ]
+    D_star_final[, trn_aviation_intl_L := ifelse(year > c(2025) ,trn_aviation_intl_L * 0.75, trn_aviation_intl_L) ]
+    D_star_final[, trn_aviation_intl_B := ifelse(year > c(2025) ,trn_aviation_intl_B * 0.15, trn_aviation_intl_B) ]
+  } else {}
+   }else if (REMIND_scenario == "SSP2"){
+  if (COVID_scenario == TRUE){
+    D_star_final[, trn_aviation_intl_L := ifelse(year %in% c(2020) ,trn_aviation_intl_L * 0.55, trn_aviation_intl_L) ]
+    D_star_final[, trn_aviation_intl_B := ifelse(year %in% c(2020) ,trn_aviation_intl_B * 0.30, trn_aviation_intl_B) ]
+    D_star_final[, trn_aviation_intl_L := ifelse(year %in% c(2025) ,trn_aviation_intl_L * 1.15, trn_aviation_intl_L) ]
+    D_star_final[, trn_aviation_intl_B := ifelse(year %in% c(2025) ,trn_aviation_intl_B * 0.40, trn_aviation_intl_B) ]
+    D_star_final[, trn_aviation_intl_L := ifelse(year > c(2025) ,trn_aviation_intl_L * 1.0, trn_aviation_intl_L) ]
+    D_star_final[, trn_aviation_intl_B := ifelse(year > c(2025) ,trn_aviation_intl_B * 0.4, trn_aviation_intl_B) ]
+  } else{}
+     }else if (REMIND_scenario == "SSP3"){
+  if (COVID_scenario == TRUE){
+    D_star_final[, trn_aviation_intl_L := ifelse(year %in% c(2020) ,trn_aviation_intl_L * 0.55, trn_aviation_intl_L) ]
+    D_star_final[, trn_aviation_intl_B := ifelse(year %in% c(2020) ,trn_aviation_intl_B * 0.30, trn_aviation_intl_B) ]
+    D_star_final[, trn_aviation_intl_L := ifelse(year %in% c(2025) ,trn_aviation_intl_L * 1.15, trn_aviation_intl_L) ]
+    D_star_final[, trn_aviation_intl_B := ifelse(year %in% c(2025) ,trn_aviation_intl_B * 0.30, trn_aviation_intl_B) ]
+    D_star_final[, trn_aviation_intl_L := ifelse(year > c(2025) ,trn_aviation_intl_L * 1.0, trn_aviation_intl_L) ]
+    D_star_final[, trn_aviation_intl_B := ifelse(year > c(2025) ,trn_aviation_intl_B * 0.4, trn_aviation_intl_B) ]
+  } else{}
+}else if (REMIND_scenario == "SSP4"){
+    if (COVID_scenario == TRUE){
+      D_star_final[, trn_aviation_intl_L := ifelse(year %in% c(2020) ,trn_aviation_intl_L * 0.55, trn_aviation_intl_L) ]
+      D_star_final[, trn_aviation_intl_B := ifelse(year %in% c(2020) ,trn_aviation_intl_B * 0.30, trn_aviation_intl_B) ]
+      D_star_final[, trn_aviation_intl_L := ifelse(year %in% c(2025) ,trn_aviation_intl_L * 1.15, trn_aviation_intl_L) ]
+      D_star_final[, trn_aviation_intl_B := ifelse(year %in% c(2025) ,trn_aviation_intl_B * 0.30, trn_aviation_intl_B) ]
+      D_star_final[, trn_aviation_intl_L := ifelse(year > c(2025) ,trn_aviation_intl_L * 1.0, trn_aviation_intl_L) ]
+      D_star_final[, trn_aviation_intl_B := ifelse(year > c(2025) ,trn_aviation_intl_B * 0.4, trn_aviation_intl_B) ]
+    }else{}
+}else if (REMIND_scenario == "SSP5"){
+    if (COVID_scenario == TRUE){
+      D_star_final[, trn_aviation_intl_L := ifelse(year %in% c(2020) ,trn_aviation_intl_L * 0.55, trn_aviation_intl_L) ]
+      D_star_final[, trn_aviation_intl_B := ifelse(year %in% c(2020) ,trn_aviation_intl_B * 0.30, trn_aviation_intl_B) ]
+      D_star_final[, trn_aviation_intl_L := ifelse(year %in% c(2025) ,trn_aviation_intl_L * 1.5, trn_aviation_intl_L) ]
+      D_star_final[, trn_aviation_intl_B := ifelse(year %in% c(2025) ,trn_aviation_intl_B * 0.8, trn_aviation_intl_B) ]
+      D_star_final[, trn_aviation_intl_L := ifelse(year > c(2025) ,trn_aviation_intl_L * 1.2, trn_aviation_intl_L) ]
+      D_star_final[, trn_aviation_intl_B := ifelse(year > c(2025) ,trn_aviation_intl_B * 1, trn_aviation_intl_B) ]
+    }else{}
+}else{}
+  #Calculate total int. demand also
+
+  D_star_final[,trn_aviation_intl:= trn_aviation_intl_L + trn_aviation_intl_B, by = c("iso", "year")]
   D_star_final = melt(D_star_final, id.vars = c("iso", "year"),
                       measure.vars = c("trn_aviation_intl", "trn_freight", "trn_pass", "trn_shipping_intl", "trn_aviation_intl_L","trn_aviation_intl_B"))
   D_star_final = D_star_final[,.(iso, year, demand = value, sector = variable)]
-  
   return(D_star_final)
   
 }
