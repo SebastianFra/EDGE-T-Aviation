@@ -328,7 +328,6 @@ generateEDGEdata <- function(input_folder, output_folder,
   print("-- performing demand regression")
   dem_regr = lvl2_demandReg(tech_output = iso_data$iso_GCAMdata_results[["tech_output"]],
                             tech_output_adj = iso_data$iso_GCAMdata_results[["tech_output_adj"]],
-                            tech_output_adj_covid = iso_data$iso_GCAMdata_results[["tech_output_adj_covid"]],
                             price_baseline = prices$S3S, 
                             REMIND_scenario = REMIND_scenario, 
                             smartlifestyle = smartlifestyle,
@@ -376,11 +375,13 @@ generateEDGEdata <- function(input_folder, output_folder,
     scenario = scenario)
 
   ## full REMIND time range for inputs
-  REMINDtall <- c(seq(1900,1985,5),
+ ' REMINDtall <- c(seq(1900,1985,5),
                   seq(1990, 2060, by = 5),
                   seq(2070, 2110, by = 10),
+                  2130, 2150)'
+  
+  REMINDtall <- c(seq(1900,2100,1),
                   2130, 2150)
-
   ## prepare the entries to be saved in the gdx files: intensity, shares, non_fuel_price. Final entries: intensity in [trillionkm/Twa], capcost in [trillion2005USD/trillionpkm], shares in [-]
   print("-- final preparation of input files")
   finalInputs <- prepare4REMIND(

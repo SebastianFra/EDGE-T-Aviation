@@ -1,4 +1,4 @@
-#' Read and prepare GCAM data
+' Read and prepare GCAM data
 #'
 #' Demand in million pkm and tmk, EI in MJ/km
 #'
@@ -106,20 +106,6 @@ lvl0_GCAMraw <- function(input_folder, GCAM_dir = "GCAM"){
   
   tech_output_adj = distribute_logit(tech_output_adj,colname = "subsector",extracol = "supplysector")
   tech_output_adj = rename_region(tech_output_adj)
-  
-  ## load and change the tech_output_adj file so that it reflects the logit tree
-  tech_output_adj_covid = fread(file.path("C:/Users/franz/Documents/R/Master-Thesis/EDGE-T/Data/inputdata/sources/EDGE-T_standalone/GCAM/tech_output_adj_covid.csv"), skip = 1, sep=";", header = T)
-  tech_output_adj_covid = melt(tech_output_adj_covid, measure.vars=6:26, value.name="tech_output_adj_covid", variable.name = "year")
-  tech_output_adj_covid[, c("Units", "scenario", "year") := list(NULL, NULL, as.numeric(as.character(year)))]
-  tech_output_adj_covid = tech_output_adj_covid[year <= 2020 & !subsector %in% c("road","LDV","bus","4W","2W")]
-  tech_output_adj_covid[, technology := ifelse(subsector %in% c("Walk","Cycle"), paste0(subsector,"_tmp_technology"),technology)]
-  
-  setnames(tech_output_adj_covid, old="sector", new="supplysector")
-  
-  tech_output_adj_covid = distribute_logit(tech_output_adj_covid,colname = "subsector",extracol = "supplysector")
-  tech_output_adj_covid = rename_region(tech_output_adj_covid)
-  
-  
   
   
   ## load and change the tech_output file so that it reflects the logit tree

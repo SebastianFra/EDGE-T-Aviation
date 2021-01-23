@@ -5,6 +5,8 @@ feelt;te_eselt_pass_sm;entrp_pass_sm;feelt_p_sm;trn_pass
 fedie;te_esdie_pass_lo;entrp_pass_lo;fedie_p_lo;trn_aviation_intl
 fedie;te_esdie_pass_lo;entrp_pass_lo_L;fedie_p_lo;trn_aviation_intl_L
 fedie;te_esdie_pass_lo;entrp_pass_lo_B;fedie_p_lo;trn_aviation_intl_B
+fedie;te_esdie_pass_lo;entrp_pass_lo_d_L;fedie_p_lo;trn_aviation_intl_d_L
+fedie;te_esdie_pass_lo;entrp_pass_lo_d_B;fedie_p_lo;trn_aviation_intl_d_B
 fedie;te_esdie_frgt_sm;entrp_frgt_sm;fedie_f_sm;trn_freight
 feelt;te_eselt_frgt_sm;entrp_frgt_sm;feelt_f_sm;trn_freight
 fedie;te_esdie_frgt_lo;entrp_frgt_lo;fedie_f_lo;trn_shipping_intl
