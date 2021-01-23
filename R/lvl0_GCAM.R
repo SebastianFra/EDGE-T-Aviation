@@ -178,7 +178,6 @@ lvl0_GCAMraw <- function(input_folder, GCAM_dir = "GCAM"){
   
   GCAM_data = list(tech_output = tech_output,
                    tech_output_adj = tech_output_adj,
-                   tech_output_adj_covid = tech_output_adj_covid,
                    logit_category = logit_category,
                    conv_pkm_mj = conv_pkm_mj,
                    load_factor = load_factor,

@@ -358,8 +358,8 @@ lvl2_demandReg <- function(tech_output, tech_output_adj, price_baseline, REMIND_
   tech_output_adj[, tech_output_adj := ifelse(year %in% c(2000)& sector == "trn_aviation_intl" ,tech_output_adj * 1.9, tech_output_adj)]
   tech_output_adj[, tech_output_adj := ifelse(year %in% c(2005)& sector == "trn_aviation_intl" ,tech_output_adj * 1.85, tech_output_adj) ]
   tech_output_adj[, tech_output_adj := ifelse(year %in% c(2010)& sector == "trn_aviation_intl" ,tech_output_adj * 1.85, tech_output_adj) ]
-  tech_output_adj[, tech_output_adj := ifelse(year %in% c(2015)& sector == "trn_aviation_intl" ,tech_output_adj * 1.85, tech_output_adj) ]
-  tech_output_adj[, tech_output_adj := ifelse(year %in% c(2020)& sector == "trn_aviation_intl" ,tech_output_adj * 1.85, tech_output_adj) ]
+  tech_output_adj[, tech_output_adj := ifelse(year %in% c(2015)& sector == "trn_aviation_intl" ,tech_output_adj * 1.75, tech_output_adj) ]
+  tech_output_adj[, tech_output_adj := ifelse(year %in% c(2020)& sector == "trn_aviation_intl" ,tech_output_adj * 1.75, tech_output_adj) ]
   #int aviation loop with forward pushing the historic data base
   demand_tot_sector_avi_L=tech_output_adj[, .(demand_tot=sum(tech_output_adj)), by=c("iso", "year", "sector")]
   demand_tot_sector_avi_B=tech_output_adj[, .(demand_tot=sum(tech_output_adj)), by=c("iso", "year", "sector")]
@@ -375,7 +375,6 @@ lvl2_demandReg <- function(tech_output, tech_output_adj, price_baseline, REMIND_
   demand_tot_sector_avi_d_L<-merge(   demand_tot_sector_avi_d_L, iso_mapping[,c(2,3)], by = c("iso"), all.x=TRUE)
   demand_tot_sector_avi_B<-merge(   demand_tot_sector_avi_B, iso_mapping[,c(2,3)], by = c("iso"), all.x=TRUE)
   demand_tot_sector_avi_d_B<-merge(   demand_tot_sector_avi_d_B, iso_mapping[,c(2,3)], by = c("iso"), all.x=TRUE)
-  
  #Split Leisure and Business
   demand_tot_sector_avi_L[,   demand_tot := ifelse(sector == "trn_aviation_intl"  ,demand_tot * 0.625, demand_tot) ]
   demand_tot_sector_avi_d_L[,   demand_tot := ifelse(sector == "trn_aviation_intl" ,demand_tot * 0.58, demand_tot) ]
@@ -444,7 +443,6 @@ lvl2_demandReg <- function(tech_output, tech_output_adj, price_baseline, REMIND_
   demand_tot_sector_avi_B=dcast(demand_tot_sector_avi_B, iso + year  ~ sector, value.var = "demand_tot", fun.aggregate = sum, margins="sector")
   demand_tot_sector_avi_d_L=dcast(demand_tot_sector_avi_d_L, iso + year  ~ sector, value.var = "demand_tot", fun.aggregate = sum, margins="sector")
   demand_tot_sector_avi_d_B=dcast(demand_tot_sector_avi_d_B, iso + year  ~ sector, value.var = "demand_tot", fun.aggregate = sum, margins="sector")
-  
   #merge D* and historical demand
   D_star_avi_L=merge(D_star_lvl1,demand_tot_sector_avi_L, by = c("iso","year"),all.x = TRUE)
   D_star_avi_B=merge(D_star_lvl1,demand_tot_sector_avi_B, by = c("iso","year"),all.x = TRUE)
@@ -509,7 +507,7 @@ lvl2_demandReg <- function(tech_output, tech_output_adj, price_baseline, REMIND_
   for (j in unique(D_star_final$iso)) {
     for (i in unique(D_star_final$year[D_star_final$iso == j])) { 
       if (D_star_final$year[D_star_final$iso == j & D_star_final$year == i] > 2020) { 
-        D_star_final$trn_aviation_intl_d_L[D_star_final$iso == j & D_star_final$year >= i] <- D_star_final$trn_aviation_intl_d_L[D_star_final$iso == j & D_star_final$year >= i] * 0.985
+        D_star_final$trn_aviation_intl_d_L[D_star_final$iso == j & D_star_final$year >= i] <- D_star_final$trn_aviation_intl_d_L[D_star_final$iso == j & D_star_final$year >= i] * 0.98
       }else{}
     }
   }
@@ -517,7 +515,7 @@ lvl2_demandReg <- function(tech_output, tech_output_adj, price_baseline, REMIND_
   for (j in unique(D_star_final$iso)) {
     for (i in unique(D_star_final$year[D_star_final$iso == j])) { 
       if (D_star_final$year[D_star_final$iso == j & D_star_final$year == i] > 2020) { 
-        D_star_final$trn_aviation_intl_d_B[D_star_final$iso == j & D_star_final$year >= i] <- D_star_final$trn_aviation_intl_d_B[D_star_final$iso == j & D_star_final$year >= i] * 0.9825
+        D_star_final$trn_aviation_intl_d_B[D_star_final$iso == j & D_star_final$year >= i] <- D_star_final$trn_aviation_intl_d_B[D_star_final$iso == j & D_star_final$year >= i] * 0.97
       }else{}
     }
   }

@@ -18,7 +18,6 @@ lvl0_toISO <- function(input_data, VOT_data, price_nonmot, UCD_data, GCAM2ISO_MA
     ## GCAM data
     tech_output <- input_data[["tech_output"]]
     tech_output_adj <- input_data[["tech_output_adj"]]
-    tech_output_adj_covid <- input_data[["tech_output_adj_covid"]]
     intensity <- input_data[["conv_pkm_mj"]]
 
     gdp <- getRMNDGDP(scenario = paste0("gdp_", REMIND_scenario), usecache = T)
@@ -41,15 +40,6 @@ lvl0_toISO <- function(input_data, VOT_data, price_nonmot, UCD_data, GCAM2ISO_MA
     ## check if there are NAs
     stopifnot(!any(is.na(TO_iso$tech_output_adj)))
     
-    ## tech output_adj_covid is extensive: use GDP weight
-    TO_iso_adj_covid <- disaggregate_dt(tech_output_adj_covid, GCAM2ISO_MAPPING,
-                                  valuecol="tech_output_adj_covid",
-                                  datacols=c("sector", "subsector_L1", "subsector_L2",
-                                             "subsector_L3", "vehicle_type", "technology"),
-                                  weights=gdp)
-    ## check if there are NAs
-    stopifnot(!any(is.na(TO_iso$tech_output_adj)))
-    
 
     ## intensity and load factor are intensive
     int_iso <- disaggregate_dt(intensity, GCAM2ISO_MAPPING)
@@ -66,7 +56,6 @@ lvl0_toISO <- function(input_data, VOT_data, price_nonmot, UCD_data, GCAM2ISO_MA
     iso_GCAMdata_results = list(
       tech_output = TO_iso,
       tech_output_adj = TO_iso_adj,
-      tech_output_adj_covid = TO_iso_adj_covid,
       conv_pkm_mj = int_iso)
 
     ## VOT an non-motorized cost, intensive
