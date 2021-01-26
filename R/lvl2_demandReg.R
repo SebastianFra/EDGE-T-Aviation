@@ -17,6 +17,110 @@
 lvl2_demandReg <- function(tech_output, tech_output_adj, price_baseline, REMIND_scenario, smartlifestyle,COVID_scenario){
   rich <- var <- eps <- GDP_cap <- iso <- eps1 <- eps2 <- GDP_val <- POP_val <- index_GDP <- income_elasticity_freight_sm <- income_elasticity_freight_lo <- index_GDPcap <- income_elasticity_pass_sm <- income_elasticity_pass_lo <- price_elasticity_pass_lo <- sector <- index_price <- tot_price <- trn_freight <- price_elasticity_freight_sm <- trn_shipping_intl <- price_elasticity_freight_lo <- trn_pass <- price_elasticity_pass_sm <- trn_aviation_intl <- `.` <- index_price_f_sm <- index_price_f_lo <- index_GDP_f_sm <- index_GDPcap_p_lo <- index_GDP_f_lo <- index_price_p_sm <- index_GDPcap_p_sm <- index_POP <- index_price_p_lo <- D_star_f_sm <- D_star_p_sm <- D_star_p_lo <- D_star_f_lo <- D_star_f_sm <- value <- variable <- NULL
   
+  
+  #Input Data
+  #RPK Treshold & Decay
+  if (REMIND_scenario == "SSP1") {
+    decay_DR_L=0.8
+    decay_treshold_L= 1300
+  }else if (REMIND_scenario == "SSP2") {
+    decay_DR_L=0.90
+    decay_treshold_L= 1500
+  }else if (REMIND_scenario == "SSP3") {
+    decay_DR_L=0.90
+    decay_treshold_L= 1500
+  }else if (REMIND_scenario == "SSP4") {
+    decay_DR_L=0.90
+    decay_treshold_L= 1500
+  }else if (REMIND_scenario == "SSP5") {
+    decay_DR_L=0.99
+    decay_treshold_L= 1600
+  }else{}
+  #mutate the decayrate for Income elasticity Business
+  if (REMIND_scenario == "SSP1") {
+    decay_DR_B=0.7
+    decay_treshold_B= 800
+  }else if (REMIND_scenario == "SSP2") {
+    decay_DR_B=0.8
+    decay_treshold_B= 1000
+  }else if (REMIND_scenario == "SSP3") {
+    decay_DR_B=0.8
+    decay_treshold_B= 1000
+  }else if (REMIND_scenario == "SSP4") {
+    decay_DR_B=0.8
+    decay_treshold_B= 1000
+  }else if (REMIND_scenario == "SSP5") {
+    decay_DR_B=0.90
+    decay_treshold_B= 1200
+  }else{}
+  #GDP Treshold
+  #Decay of Income Elasticity
+  #International
+  #Leisure
+  if (REMIND_scenario == "SSP1") {
+    GDP_treshold_L= 50000
+  }else if (REMIND_scenario == "SSP2") {
+    GDP_treshold_L= 55000
+  }else if (REMIND_scenario == "SSP3") {
+    GDP_treshold_L= 55000
+  }else if (REMIND_scenario == "SSP4") {
+    GDP_treshold_L= 55000
+  }else if (REMIND_scenario == "SSP5") {
+    GDP_treshold_L= 60000
+  }else{}
+  
+  #Business
+  if (REMIND_scenario == "SSP1") {
+    GDP_treshold_B= 45000
+  }else if (REMIND_scenario == "SSP2") {
+    GDP_treshold_B= 50000
+  }else if (REMIND_scenario == "SSP3") {
+    GDP_treshold_B= 50000
+  }else if (REMIND_scenario == "SSP4") {
+    GDP_treshold_B= 50000
+  }else if (REMIND_scenario == "SSP5") {
+    GDP_treshold_B= 550000
+  }else{}
+  
+  #floor level of domestic in year 2100
+if (REMIND_scenario == "SSP1") {
+    floor_domestic_leisure = 0.40
+    floor_domestic_business = 0.30
+    top_domestic_leisure = 1.1
+    top_domestic_business = 1.1
+    special_country_floor_leisure = 0.8
+    special_country_floor_business = 0.7
+  }else if (REMIND_scenario == "SSP2") {
+    floor_domestic_leisure = 0.60
+    floor_domestic_business = 0.50
+    top_domestic_leisure = 1.1
+    top_domestic_business = 1.1
+    special_country_floor_leisure = 0.9
+    special_country_floor_business = 0.8
+  }else if (REMIND_scenario == "SSP3") {
+    floor_domestic_leisure = 0.20
+    floor_domestic_business = 0.10
+    top_domestic_leisure = 1.1
+    top_domestic_business = 1.1
+    special_country_floor_leisure = 0.8
+    special_country_floor_business = 0.8
+  }else if (REMIND_scenario == "SSP4") {
+    floor_domestic_leisure = 0.20
+    floor_domestic_business = 0.10
+    top_domestic_leisure = 1.1
+    top_domestic_business = 1.1
+    special_country_floor_leisure = 0.8
+    special_country_floor_business = 0.8
+  }else if (REMIND_scenario == "SSP5") {
+    floor_domestic_leisure = 0.9
+    floor_domestic_business = 0.8
+    top_domestic_leisure = 1.1
+    top_domestic_business = 1.1
+    special_country_floor_leisure = 1
+    special_country_floor_business = 0.9
+  }else{}
+
+  
   ## conversion rate 2005->1990 USD
   
   CONV_2005USD_1990USD = 0.67
@@ -90,8 +194,8 @@ lvl2_demandReg <- function(tech_output, tech_output_adj, price_baseline, REMIND_
   
   #define tresholds and decay rate
   #couple decay rate to RPK_cap of baseline runs
-  RPK_cap_baseline_L = fread(file.path("C:/Users/franz/Documents/R/Master-Thesis/EDGE-T/Export Data/RPK_CAP_baseline_leisure_master3.csv"), sep=",", header = T)
-  RPK_cap_baseline_B = fread(file.path("C:/Users/franz/Documents/R/Master-Thesis/EDGE-T/Export Data/RPK_CAP_baseline_business_master3.csv"), sep=",", header = T)
+  RPK_cap_baseline_L = fread(file.path("C:/Users/franz/Documents/R/Master-Thesis/EDGE-T/Export Data/RPK_CAP_reference_leisure.csv"), sep=",", header = T)
+  RPK_cap_baseline_B = fread(file.path("C:/Users/franz/Documents/R/Master-Thesis/EDGE-T/Export Data/RPK_CAP_reference_business.csv"), sep=",", header = T)
   RPK_cap_baseline_L <- RPK_cap_baseline_L[scenario == REMIND_scenario]
   RPK_cap_baseline_B <- RPK_cap_baseline_B[scenario == REMIND_scenario]
   price_el_int_aviation_L_RPK = merge( price_el_int_aviation_L, RPK_cap_baseline_L[,c(1,2,5)], by = c("iso","year"),all.x = TRUE)
@@ -102,43 +206,7 @@ lvl2_demandReg <- function(tech_output, tech_output_adj, price_baseline, REMIND_
   price_el_int_aviation_L_RPK <- subset(price_el_int_aviation_L_RPK, price_el_int_aviation_L_RPK$year <=2060 & price_el_int_aviation_L_RPK$year >=2020)
   price_el_int_aviation_B_RPK <- price_el_int_aviation_B_RPK[,decay_rate:= 1]
   price_el_int_aviation_B_RPK <- subset(price_el_int_aviation_B_RPK, price_el_int_aviation_B_RPK$year <=2060 & price_el_int_aviation_B_RPK$year >=2020)
-  #International
-  #mutate the decayrate for Income elasticity Leisure
-  if (REMIND_scenario == "SSP1") {
-    decay_DR_L=0.8
-    decay_treshold_L= 1300
-  }else if (REMIND_scenario == "SSP2") {
-    decay_DR_L=0.90
-    decay_treshold_L= 1500
-  }else if (REMIND_scenario == "SSP3") {
-    decay_DR_L=0.90
-    decay_treshold_L= 1500
-  }else if (REMIND_scenario == "SSP4") {
-    decay_DR_L=0.90
-    decay_treshold_L= 1500
-  }else if (REMIND_scenario == "SSP5") {
-    decay_DR_L=0.99
-    decay_treshold_L= 1600
-  }else{}
-  #mutate the decayrate for Income elasticity Business
-  if (REMIND_scenario == "SSP1") {
-    decay_DR_B=0.7
-    decay_treshold_B= 700
-  }else if (REMIND_scenario == "SSP2") {
-    decay_DR_B=0.8
-    decay_treshold_B= 1000
-  }else if (REMIND_scenario == "SSP3") {
-    decay_DR_B=0.8
-    decay_treshold_B= 1000
-  }else if (REMIND_scenario == "SSP4") {
-    decay_DR_B=0.8
-    decay_treshold_B= 1000
-  }else if (REMIND_scenario == "SSP5") {
-    decay_DR_B=0.90
-    decay_treshold_B= 1200
-  }else{}
   #Loops that adjust the decay rate of  aviation
-  
   #int aviation
   #Leisure Loop
   for (j in unique(price_el_int_aviation_L_RPK$iso)) {
@@ -198,34 +266,6 @@ lvl2_demandReg <- function(tech_output, tech_output_adj, price_baseline, REMIND_
       }
     }
   }
-  #Decay of Income Elasticity
-  #International
-  #Leisure
-  if (REMIND_scenario == "SSP1") {
-    GDP_treshold_L= 45000
-  }else if (REMIND_scenario == "SSP2") {
-    GDP_treshold_L= 50000
-  }else if (REMIND_scenario == "SSP3") {
-    GDP_treshold_L= 50000
-  }else if (REMIND_scenario == "SSP4") {
-    GDP_treshold_L= 50000
-  }else if (REMIND_scenario == "SSP5") {
-    GDP_treshold_L= 55000
-  }else{}
-  
-  #Business
-  if (REMIND_scenario == "SSP1") {
-    GDP_treshold_B= 40000
-  }else if (REMIND_scenario == "SSP2") {
-    GDP_treshold_B= 45000
-  }else if (REMIND_scenario == "SSP3") {
-    GDP_treshold_B= 45000
-  }else if (REMIND_scenario == "SSP4") {
-    GDP_treshold_B= 45000
-  }else if (REMIND_scenario == "SSP5") {
-    GDP_treshold_B= 50000
-  }else{}
-  #International
   #Leisure Loop
   for (j in unique(price_el_int_aviation_L$iso)) {
     for (i in unique(price_el_int_aviation_L$year[price_el_int_aviation_L$iso == j])) { 
@@ -245,8 +285,8 @@ lvl2_demandReg <- function(tech_output, tech_output_adj, price_baseline, REMIND_
   
   #adjust rest asia and africa otherwise it would be to high
   #international
-  price_el_int_aviation_L[, eps := ifelse( iso_region %in% c("R10REST_ASIA", "R10AFRICA"), eps *0.75, eps )]
-  price_el_int_aviation_B[, eps := ifelse( iso_region %in% c("R10REST_ASIA"), eps *0.5, eps)]
+  price_el_int_aviation_L[, eps := ifelse( iso_region %in% c("R10REST_ASIA", "R10AFRICA", "R10Middel east"), eps *0.75, eps )]
+  price_el_int_aviation_B[, eps := ifelse( iso_region %in% c("R10REST_ASIA", "R10 Africa", "R10 Middle East"), eps *0.5, eps)]
   
   #drop iso_region
   price_el_int_aviation_L[,c("iso_region", "RPK_CAP_L"):=NULL]
@@ -322,8 +362,6 @@ lvl2_demandReg <- function(tech_output, tech_output_adj, price_baseline, REMIND_
                         D_star_p_sm=index_price_p_sm*index_GDPcap_p_sm*index_POP,
                         D_star_p_lo_L=index_price_p_lo_L*index_GDPcap_p_lo_L*index_POP,
                         D_star_p_lo_B=index_price_p_lo_B*index_GDPcap_p_lo_B*index_POP,
-                        D_star_p_lo_d_L=index_price_p_lo_L*index_GDPcap_p_lo_L*index_POP,
-                        D_star_p_lo_d_B=index_price_p_lo_B*index_GDPcap_p_lo_B*index_POP,
                         iso,
                         year)]
   #calculate demand at a sector level
@@ -351,100 +389,20 @@ lvl2_demandReg <- function(tech_output, tech_output_adj, price_baseline, REMIND_
   #drop int aviation
   D_star_else <- D_star[,c(8):= NULL]
   #adjust for domestic and international
-  tech_output_adj[, tech_output_adj := ifelse(year %in% c(2000)& sector == "trn_aviation_intl" ,tech_output_adj * 1.9, tech_output_adj)]
-  tech_output_adj[, tech_output_adj := ifelse(year %in% c(2005)& sector == "trn_aviation_intl" ,tech_output_adj * 1.85, tech_output_adj) ]
-  tech_output_adj[, tech_output_adj := ifelse(year %in% c(2010)& sector == "trn_aviation_intl" ,tech_output_adj * 1.85, tech_output_adj) ]
-  tech_output_adj[, tech_output_adj := ifelse(year %in% c(2015)& sector == "trn_aviation_intl" ,tech_output_adj * 1.75, tech_output_adj) ]
-  tech_output_adj[, tech_output_adj := ifelse(year %in% c(2020)& sector == "trn_aviation_intl" ,tech_output_adj * 1.75, tech_output_adj) ]
   #int aviation loop with forward pushing the historic data base
   demand_tot_sector_avi_L=tech_output_adj[, .(demand_tot=sum(tech_output_adj)), by=c("iso", "year", "sector")]
   demand_tot_sector_avi_B=tech_output_adj[, .(demand_tot=sum(tech_output_adj)), by=c("iso", "year", "sector")]
-  demand_tot_sector_avi_d_L=tech_output_adj[, .(demand_tot=sum(tech_output_adj)), by=c("iso", "year", "sector")]
-  demand_tot_sector_avi_d_B=tech_output_adj[, .(demand_tot=sum(tech_output_adj)), by=c("iso", "year", "sector")]
   #Differentiate between different Trip Purposes in techoutput file and differentiate between domestic and leisure
-  #in terms trip-purposes of leisure and business we assume one split from the us survey as approximation for all countries
-  #domestic: 42% business , 58% leisure///international: 37.5% business 62.5% leisure
-  #inline with ICAO January page 17
-  #add mapping
-  iso_mapping <-read_csv("C:/Users/franz/Documents/R/Master-Thesis/EDGE-T/Export Data/regionmappingR10.csv")
-  demand_tot_sector_avi_L<-merge(   demand_tot_sector_avi_L, iso_mapping[,c(2,3)], by = c("iso"), all.x=TRUE)
-  demand_tot_sector_avi_d_L<-merge(   demand_tot_sector_avi_d_L, iso_mapping[,c(2,3)], by = c("iso"), all.x=TRUE)
-  demand_tot_sector_avi_B<-merge(   demand_tot_sector_avi_B, iso_mapping[,c(2,3)], by = c("iso"), all.x=TRUE)
-  demand_tot_sector_avi_d_B<-merge(   demand_tot_sector_avi_d_B, iso_mapping[,c(2,3)], by = c("iso"), all.x=TRUE)
- #Split Leisure and Business
+  demand_tot_sector_avi_B<-merge( demand_tot_sector_avi_B, iso_mapping[,c(2,3)], by = c("iso"), all.x=TRUE)
+  #Split Leisure and Business
   demand_tot_sector_avi_L[,   demand_tot := ifelse(sector == "trn_aviation_intl"  ,demand_tot * 0.625, demand_tot) ]
-  demand_tot_sector_avi_d_L[,   demand_tot := ifelse(sector == "trn_aviation_intl" ,demand_tot * 0.58, demand_tot) ]
   demand_tot_sector_avi_B[,   demand_tot := ifelse(sector == "trn_aviation_intl" ,demand_tot * 0.375, demand_tot) ]
-  demand_tot_sector_avi_d_B[,   demand_tot := ifelse(sector == "trn_aviation_intl",demand_tot * 0.42, demand_tot) ]
-  
-  #Split domestic and international regional based
-  #Africa
-  demand_tot_sector_avi_L[,   demand_tot := ifelse(sector == "trn_aviation_intl" & iso_region == "R10AFRICA" ,demand_tot * 0.65, demand_tot) ]
-  demand_tot_sector_avi_d_L[,   demand_tot := ifelse(sector == "trn_aviation_intl"& iso_region == "R10AFRICA" ,demand_tot * 0.35, demand_tot) ]
-  demand_tot_sector_avi_B[,   demand_tot := ifelse(sector == "trn_aviation_intl"& iso_region == "R10AFRICA" ,demand_tot * 0.65, demand_tot) ]
-  demand_tot_sector_avi_d_B[,   demand_tot := ifelse(sector == "trn_aviation_intl"& iso_region == "R10AFRICA" ,demand_tot * 0.35, demand_tot) ]
-  #Asia-Pacific
-  #China
-  demand_tot_sector_avi_L[,   demand_tot := ifelse(sector == "trn_aviation_intl" & iso_region == "R10CHINA+" ,demand_tot * 0.30, demand_tot) ]
-  demand_tot_sector_avi_d_L[,   demand_tot := ifelse(sector == "trn_aviation_intl"& iso_region == "R10CHINA+" ,demand_tot * 0.70, demand_tot) ]
-  demand_tot_sector_avi_B[,   demand_tot := ifelse(sector == "trn_aviation_intl"& iso_region == "R10CHINA+" ,demand_tot * 0.30, demand_tot) ]
-  demand_tot_sector_avi_d_B[,   demand_tot := ifelse(sector == "trn_aviation_intl"& iso_region == "R10CHINA+" ,demand_tot * 0.70, demand_tot) ]
-  #India
-  demand_tot_sector_avi_L[,   demand_tot := ifelse(sector == "trn_aviation_intl" & iso_region == "R10INDIA+" ,demand_tot * 0.3, demand_tot) ]
-  demand_tot_sector_avi_d_L[,   demand_tot := ifelse(sector == "trn_aviation_intl"& iso_region == "R10INDIA+" ,demand_tot * 0.7, demand_tot) ]
-  demand_tot_sector_avi_B[,   demand_tot := ifelse(sector == "trn_aviation_intl"& iso_region == "R10INDIA+" ,demand_tot * 0.3, demand_tot) ]
-  demand_tot_sector_avi_d_B[,   demand_tot := ifelse(sector == "trn_aviation_intl"& iso_region == "R10INDIA+" ,demand_tot * 0.7, demand_tot) ]
-  #rest asia
-  demand_tot_sector_avi_L[,   demand_tot := ifelse(sector == "trn_aviation_intl" & iso_region == "R10REST_ASIA" ,demand_tot * 0.3, demand_tot) ]
-  demand_tot_sector_avi_d_L[,   demand_tot := ifelse(sector == "trn_aviation_intl"& iso_region == "R10REST_ASIA" ,demand_tot *  0.7, demand_tot) ]
-  demand_tot_sector_avi_B[,   demand_tot := ifelse(sector == "trn_aviation_intl"& iso_region == "R10REST_ASIA" ,demand_tot * 0.3, demand_tot) ]
-  demand_tot_sector_avi_d_B[,   demand_tot := ifelse(sector == "trn_aviation_intl"& iso_region == "R10REST_ASIA" ,demand_tot * 0.7, demand_tot) ]
-  #Europe
-  demand_tot_sector_avi_L[,   demand_tot := ifelse(sector == "trn_aviation_intl" & iso_region == "R10EUROPE" ,demand_tot * 0.74, demand_tot) ]
-  demand_tot_sector_avi_d_L[,   demand_tot := ifelse(sector == "trn_aviation_intl"& iso_region == "R10EUROPE" ,demand_tot * 0.26, demand_tot) ]
-  demand_tot_sector_avi_B[,   demand_tot := ifelse(sector == "trn_aviation_intl"& iso_region == "R10EUROPE" ,demand_tot * 0.74, demand_tot) ]
-  demand_tot_sector_avi_d_B[,   demand_tot := ifelse(sector == "trn_aviation_intl"& iso_region == "R10EUROPE" ,demand_tot * 0.26, demand_tot) ]
-  #ref_econ(Armenia,Belarus etc. ---> World share)
-  demand_tot_sector_avi_L[,   demand_tot := ifelse(sector == "trn_aviation_intl" & iso_region == "R10REF_ECON" ,demand_tot *  0.58, demand_tot) ]
-  demand_tot_sector_avi_d_L[,   demand_tot := ifelse(sector == "trn_aviation_intl"& iso_region == "R10REF_ECON" ,demand_tot * 0.42, demand_tot) ]
-  demand_tot_sector_avi_B[,   demand_tot := ifelse(sector == "trn_aviation_intl"& iso_region == "R10REF_ECON" ,demand_tot * 0.58, demand_tot) ]
-  demand_tot_sector_avi_d_B[,   demand_tot := ifelse(sector == "trn_aviation_intl"& iso_region == "R10REF_ECON" ,demand_tot *  0.42, demand_tot) ]
-  #Latin
-  demand_tot_sector_avi_L[,   demand_tot := ifelse(sector == "trn_aviation_intl" & iso_region == "R10LATIN_AM" ,demand_tot * 0.35, demand_tot) ]
-  demand_tot_sector_avi_d_L[,   demand_tot := ifelse(sector == "trn_aviation_intl"& iso_region == "R10LATIN_AM" ,demand_tot * 0.65, demand_tot) ]
-  demand_tot_sector_avi_B[,   demand_tot := ifelse(sector == "trn_aviation_intl"& iso_region == "R10LATIN_AM" ,demand_tot * 0.35, demand_tot) ]
-  demand_tot_sector_avi_d_B[,   demand_tot := ifelse(sector == "trn_aviation_intl"& iso_region == "R10LATIN_AM" ,demand_tot * 0.65, demand_tot) ]
-  #Middle East
-  demand_tot_sector_avi_L[,   demand_tot := ifelse(sector == "trn_aviation_intl" & iso_region == "R10MIDDLE_EAST" ,demand_tot * 0.79, demand_tot) ]
-  demand_tot_sector_avi_d_L[,   demand_tot := ifelse(sector == "trn_aviation_intl"& iso_region == "R10MIDDLE_EAST" ,demand_tot * 0.21, demand_tot) ]
-  demand_tot_sector_avi_B[,   demand_tot := ifelse(sector == "trn_aviation_intl"& iso_region == "R10MIDDLE_EAST" ,demand_tot * 0.79, demand_tot) ]
-  demand_tot_sector_avi_d_B[,   demand_tot := ifelse(sector == "trn_aviation_intl"& iso_region == "R10MIDDLE_EAST" ,demand_tot * 0.21, demand_tot) ]
-  #North-America
-  demand_tot_sector_avi_L[,   demand_tot := ifelse(sector == "trn_aviation_intl" & iso_region == "R10NORTH_AM" ,demand_tot * 0.16, demand_tot) ]
-  demand_tot_sector_avi_d_L[,   demand_tot := ifelse(sector == "trn_aviation_intl"& iso_region == "R10NORTH_AM" ,demand_tot * 0.84, demand_tot) ]
-  demand_tot_sector_avi_B[,   demand_tot := ifelse(sector == "trn_aviation_intl"& iso_region == "R10NORTH_AM" ,demand_tot * 0.16, demand_tot) ]
-  demand_tot_sector_avi_d_B[,   demand_tot := ifelse(sector == "trn_aviation_intl"& iso_region == "R10NORTH_AM" ,demand_tot * 0.84, demand_tot) ]
-  #pacific oecd (Canada, Japan,australia --> Use World share)
-  demand_tot_sector_avi_L[,   demand_tot := ifelse(sector == "trn_aviation_intl" & iso_region == "R10PAC_OECD" ,demand_tot * 0.42, demand_tot) ]
-  demand_tot_sector_avi_d_L[,   demand_tot := ifelse(sector == "trn_aviation_intl"& iso_region == "R10PAC_OECD" ,demand_tot * 0.58, demand_tot) ]
-  demand_tot_sector_avi_B[,   demand_tot := ifelse(sector == "trn_aviation_intl"& iso_region == "R10PAC_OECD" ,demand_tot * 0.42, demand_tot) ]
-  demand_tot_sector_avi_d_B[,   demand_tot := ifelse(sector == "trn_aviation_intl"& iso_region == "R10PAC_OECD" ,demand_tot * 0.58, demand_tot) ]
-  #drop region
-  demand_tot_sector_avi_L[,c("iso_region"):=NULL]
-  demand_tot_sector_avi_d_L[,c("iso_region"):=NULL]
-  demand_tot_sector_avi_B[,c("iso_region"):=NULL]
-  demand_tot_sector_avi_d_B[,c("iso_region"):=NULL]
   #from long to wide format, so that the df has separate columns for all transport modes
   demand_tot_sector_avi_L=dcast(demand_tot_sector_avi_L, iso + year  ~ sector, value.var = "demand_tot", fun.aggregate = sum, margins="sector")
   demand_tot_sector_avi_B=dcast(demand_tot_sector_avi_B, iso + year  ~ sector, value.var = "demand_tot", fun.aggregate = sum, margins="sector")
-  demand_tot_sector_avi_d_L=dcast(demand_tot_sector_avi_d_L, iso + year  ~ sector, value.var = "demand_tot", fun.aggregate = sum, margins="sector")
-  demand_tot_sector_avi_d_B=dcast(demand_tot_sector_avi_d_B, iso + year  ~ sector, value.var = "demand_tot", fun.aggregate = sum, margins="sector")
   #merge D* and historical demand
   D_star_avi_L=merge(D_star_lvl1,demand_tot_sector_avi_L, by = c("iso","year"),all.x = TRUE)
   D_star_avi_B=merge(D_star_lvl1,demand_tot_sector_avi_B, by = c("iso","year"),all.x = TRUE)
-  D_star_avi_d_L=merge(D_star_lvl1,demand_tot_sector_avi_d_L, by = c("iso","year"),all.x = TRUE)
-  D_star_avi_d_B=merge(D_star_lvl1,demand_tot_sector_avi_d_B, by = c("iso","year"),all.x = TRUE)
-  
   #Loop to calculate future demand
   #international
   i=NULL
@@ -458,34 +416,14 @@ lvl2_demandReg <- function(tech_output, tech_output_adj, price_baseline, REMIND_
     D_star_avi_B[is.na(trn_aviation_intl) & !is.na(tmp),trn_aviation_intl:=tmp]
     i=i+1
   }
-  #domestic
-  i=NULL
-  for (i in seq(1,length(unique(D_star_avi_d_L$year)),1)) {
-    D_star_avi_d_L[year>=2020,tmp:=shift(trn_aviation_intl)*D_star_p_lo_d_L,by=c("iso")]
-    D_star_avi_d_L[is.na(trn_aviation_intl) & !is.na(tmp),trn_aviation_intl:=tmp]
-    i=i+1
-  }
-  for (i in seq(1,length(unique(D_star_avi_d_B$year)),1)) {
-    D_star_avi_d_B[year>=2020,tmp:=shift(trn_aviation_intl)*D_star_p_lo_d_B,by=c("iso")]
-    D_star_avi_d_B[is.na(trn_aviation_intl) & !is.na(tmp),trn_aviation_intl:=tmp]
-    i=i+1
-  }
   #merge files
   setnames(D_star_avi_L, "trn_aviation_intl", "trn_aviation_intl_L")
   setnames(D_star_avi_B, "trn_aviation_intl", "trn_aviation_intl_B")
-  setnames(D_star_avi_d_L, "trn_aviation_intl", "trn_aviation_intl_d_L")
-  setnames(D_star_avi_d_B, "trn_aviation_intl", "trn_aviation_intl_d_B")
   D_star_avi=merge(D_star_avi_L, D_star_avi_B,by = c("iso","year"),all.x = TRUE)
-  D_star_avi_d=merge(D_star_avi_d_L, D_star_avi_d_B,by = c("iso","year"),all.x = TRUE)
-  D_star_avi=merge(D_star_avi_d, D_star_avi,by = c("iso","year"),all.x = TRUE)
   #merge two files
   D_star_final=merge(D_star_else, D_star_avi,by = c("iso","year"),all.x = TRUE)
-  D_star_final <- D_star_final[, c(9,13:21,23:34,36:47):= NULL]
-  D_star_final <- D_star_final[, c(15:26,28:31):= NULL]
-  ## select only the columns that contains the demand
-  D_star_final[, c(3:8) := NULL]
+  D_star_final <- D_star_final[, c(3:7,11:17,19:28, 30:33):= NULL]
   #linear interpolation of 5 year data to yearly data
-  #create sequence of dates
   ## long format
   D_star_final=melt(D_star_final,id.vars = c("iso","year"))
   ## interpolate
@@ -498,27 +436,60 @@ lvl2_demandReg <- function(tech_output, tech_output_adj, price_baseline, REMIND_
   
   ## back to previous format
   D_star_final=dcast(D_star_final,iso+year~variable,value.var="value")
-  #manually lower domestic demand 
+  #domestic calcuation
+  ############################
+  D_star_final <- transform( D_star_final, trn_aviation_intl_d_L = trn_aviation_intl_L)
+  D_star_final <- transform( D_star_final, trn_aviation_intl_d_B = trn_aviation_intl_B)
+  #add is mapping
+  iso_mapping <-read_csv("C:/Users/franz/Documents/R/Master-Thesis/EDGE-T/Export Data/regionmappingR10.csv")
+  D_star_final<-merge(D_star_final, iso_mapping[,c(2,3)], by = c("iso"), all.x=TRUE)
+  #load df with shares
+  ## interpolate
+  Domestic_shares = fread(file.path("C:/Users/franz/Documents/R/Master-Thesis/EDGE-T/Export Data/Domestic_shares.csv"), sep=";", header = T)
+  Domestic_shares[, shares_d_L := ifelse( year == 2100 ,floor_domestic_leisure , shares_d_L) ]
+  Domestic_shares[, shares_d_B := ifelse( year == 2100 , floor_domestic_business, shares_d_B) ]
+  Domestic_shares[, shares_d_L := ifelse( year == 2005 ,top_domestic_leisure , shares_d_L) ]
+  Domestic_shares[, shares_d_B := ifelse( year == 2005 , top_domestic_business, shares_d_B) ]
+  #adjust for very larger countries
+  Domestic_shares[, shares_d_L := ifelse( year == 2100 & iso == "RUS" , special_country_floor_leisure , shares_d_L) ]
+  Domestic_shares[, shares_d_B := ifelse( year == 2100 & iso == "RUS"  , special_country_floor_business , shares_d_L) ]
+  Domestic_shares[, shares_d_L := ifelse( year == 2100 & iso == "USA" , special_country_floor_leisure , shares_d_L) ]
+  Domestic_shares[, shares_d_B := ifelse( year == 2100 & iso == "USA"  , special_country_floor_business , shares_d_L) ]
+  Domestic_shares[, shares_d_L := ifelse( year == 2100 & iso == "CAN" , special_country_floor_leisure , shares_d_L) ]
+  Domestic_shares[, shares_d_B := ifelse( year == 2100 & iso == "CAN"  , special_country_floor_business , shares_d_L) ]
+  Domestic_shares[, shares_d_L := ifelse( year == 2100 & iso == "AUS" , special_country_floor_leisure , shares_d_L) ]
+  Domestic_shares[, shares_d_B := ifelse( year == 2100 & iso == "AUS"  , special_country_floor_business , shares_d_L) ]
+  Domestic_shares=melt(Domestic_shares,id.vars = c("iso","year"))
+  Domestic_shares=approx_dt(dt = Domestic_shares, ## database to interpolate
+                         xdata = seq(2005,2100), ## time steps on which to interpolate
+                         ycol = "value", ## column containing the data to interpolate
+                         xcol="year", ## x-axis of the interpolation, i.e. the years that you indeed have available
+                         idxcols=c("iso","variable"), ## equivalent of "group_by" in dplyr and "by=.(....)" in data.table
+                         extrapolate = T) ## extrapolate? i.e. min(xdata)<min(unique(dat$year))|max(xdata)>max(unique(dat$year))
+  Domestic_shares=dcast(Domestic_shares,iso+year~variable,value.var="value")
+  #merge again
+  D_star_final<-merge(D_star_final, Domestic_shares, by = c("iso", "year"), all.x=TRUE)
   #domestic leisure
-  for (j in unique(D_star_final$iso)) {
-    for (i in unique(D_star_final$year[D_star_final$iso == j])) { 
-      if (D_star_final$year[D_star_final$iso == j & D_star_final$year == i] > 2020) { 
-        D_star_final$trn_aviation_intl_d_L[D_star_final$iso == j & D_star_final$year >= i] <- D_star_final$trn_aviation_intl_d_L[D_star_final$iso == j & D_star_final$year >= i] * 0.98
-      }else{}
+    for (j in unique(D_star_final$iso)) {
+      for (i in unique(D_star_final$year[D_star_final$iso == j])) { 
+        if (D_star_final$year[D_star_final$iso == j & D_star_final$year == i] > 2019) { 
+          D_star_final$trn_aviation_intl_d_L[D_star_final$iso == j & D_star_final$year == i] <- D_star_final$trn_aviation_intl_d_L[ D_star_final$iso == j & D_star_final$year == i] * D_star_final$shares_d_L[ D_star_final$iso == j & D_star_final$year == i]
+        }
+      }
     }
-  }
   #domestic business
   for (j in unique(D_star_final$iso)) {
     for (i in unique(D_star_final$year[D_star_final$iso == j])) { 
-      if (D_star_final$year[D_star_final$iso == j & D_star_final$year == i] > 2020) { 
-        D_star_final$trn_aviation_intl_d_B[D_star_final$iso == j & D_star_final$year >= i] <- D_star_final$trn_aviation_intl_d_B[D_star_final$iso == j & D_star_final$year >= i] * 0.97
-      }else{}
+      if (D_star_final$year[D_star_final$iso == j & D_star_final$year == i] > 2019) { 
+        D_star_final$trn_aviation_intl_d_B[D_star_final$iso == j & D_star_final$year == i] <- D_star_final$trn_aviation_intl_d_B[ D_star_final$iso == j & D_star_final$year == i] * D_star_final$shares_d_B[ D_star_final$iso == j & D_star_final$year == i]
+      }
     }
   }
+  
+  ###################
   #COVID-ADJUSTMENT: Exogenous Shock
   COVID_shock = fread(file.path("C:/Users/franz/Documents/R/Master-Thesis/EDGE-T/Export Data/COVID_shock.csv"), sep=";", header = T)
   D_star_final=merge(D_star_final, COVID_shock,by = c("iso","year"),all.x = TRUE)
-  
   #International Leisure
   if (REMIND_scenario == "SSP1"){
     if (COVID_scenario == TRUE){
