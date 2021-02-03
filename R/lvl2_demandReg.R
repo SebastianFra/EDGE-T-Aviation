@@ -11,7 +11,7 @@
 #'
 #' @importFrom rmndt magpie2dt
 #' @importFrom data.table shift frank
-#' L= Leisure
+#'  L= Leisure
 #' B= Business
 
 lvl2_demandReg <- function(tech_output, tech_output_adj, price_baseline, REMIND_scenario, smartlifestyle,COVID_scenario){
@@ -82,42 +82,42 @@ lvl2_demandReg <- function(tech_output, tech_output_adj, price_baseline, REMIND_
     GDP_treshold_B= 550000
   }else{}
   
-  #floor level of domestic in year 2100
+  #floor levels for domestic derivation
 if (REMIND_scenario == "SSP1") {
-    floor_domestic_leisure = 0.40
-    floor_domestic_business = 0.30
-    top_domestic_leisure = 1.1
-    top_domestic_business = 1.1
-    special_country_floor_leisure = 0.8
-    special_country_floor_business = 0.7
+    floor_domestic_leisure = 0.1
+    floor_domestic_business = 0.05
+    top_domestic_leisure = 1
+    top_domestic_business = 1
+    special_country_floor_leisure = 0.20
+    special_country_floor_business = 0.15
   }else if (REMIND_scenario == "SSP2") {
-    floor_domestic_leisure = 0.60
-    floor_domestic_business = 0.50
-    top_domestic_leisure = 1.1
-    top_domestic_business = 1.1
-    special_country_floor_leisure = 0.9
-    special_country_floor_business = 0.8
+    floor_domestic_leisure = 0.15
+    floor_domestic_business = 0.1
+    top_domestic_leisure = 1
+    top_domestic_business = 1
+    special_country_floor_leisure = 0.25
+    special_country_floor_business = 0.2
   }else if (REMIND_scenario == "SSP3") {
     floor_domestic_leisure = 0.20
     floor_domestic_business = 0.10
-    top_domestic_leisure = 1.1
-    top_domestic_business = 1.1
+    top_domestic_leisure = 1
+    top_domestic_business = 1
     special_country_floor_leisure = 0.8
     special_country_floor_business = 0.8
   }else if (REMIND_scenario == "SSP4") {
     floor_domestic_leisure = 0.20
     floor_domestic_business = 0.10
-    top_domestic_leisure = 1.1
-    top_domestic_business = 1.1
+    top_domestic_leisure = 1
+    top_domestic_business = 1
     special_country_floor_leisure = 0.8
     special_country_floor_business = 0.8
   }else if (REMIND_scenario == "SSP5") {
-    floor_domestic_leisure = 0.9
-    floor_domestic_business = 0.8
-    top_domestic_leisure = 1.1
-    top_domestic_business = 1.1
-    special_country_floor_leisure = 1
-    special_country_floor_business = 0.9
+    floor_domestic_leisure = 0.2
+    floor_domestic_business = 0.15
+    top_domestic_leisure = 1
+    top_domestic_business = 1
+    special_country_floor_leisure = 0.3
+    special_country_floor_business = 0.25
   }else{}
 
   
@@ -285,8 +285,8 @@ if (REMIND_scenario == "SSP1") {
   
   #adjust rest asia and africa otherwise it would be to high
   #international
-  price_el_int_aviation_L[, eps := ifelse( iso_region %in% c("R10REST_ASIA", "R10AFRICA", "R10Middel east"), eps *0.75, eps )]
-  price_el_int_aviation_B[, eps := ifelse( iso_region %in% c("R10REST_ASIA", "R10 Africa", "R10 Middle East"), eps *0.5, eps)]
+  price_el_int_aviation_L[, eps := ifelse( iso_region %in% c("R10REST_ASIA", "R10AFRICA", "R10MIDDEL_EAST"), eps *0.75, eps )]
+  price_el_int_aviation_B[, eps := ifelse( iso_region %in% c("R10REST_ASIA", "R10AFRICA", "R10MIDDLE_EAST"), eps *0.75, eps)]
   
   #drop iso_region
   price_el_int_aviation_L[,c("iso_region", "RPK_CAP_L"):=NULL]
@@ -443,6 +443,31 @@ if (REMIND_scenario == "SSP1") {
   #add is mapping
   iso_mapping <-read_csv("C:/Users/franz/Documents/R/Master-Thesis/EDGE-T/Export Data/regionmappingR10.csv")
   D_star_final<-merge(D_star_final, iso_mapping[,c(2,3)], by = c("iso"), all.x=TRUE)
+ ' here adjust the 2019 values for domestic according to passenger data from ICAO on regional basis and than
+  adjust for domestic international in terms of RPK with lets say 1.5'
+  International_value = fread(file.path("C:/Users/franz/Documents/R/Master-Thesis/EDGE-T/Export Data/Calibration_value_domestic.csv"), sep=";", header = T)
+  International_value <- International_value %>%rename(iso_region = region)
+  D_star_final<-merge(D_star_final, International_value[,c(1,4)], by = c("iso_region"), all.x=TRUE)
+  #domestic leisure
+  for (j in unique(D_star_final$iso)) {
+    for (i in unique(D_star_final$year[D_star_final$iso == j])) { 
+      if (D_star_final$year[D_star_final$iso == j & D_star_final$year == i] >= 2019) { 
+        D_star_final$trn_aviation_intl_d_L[D_star_final$iso == j & D_star_final$year == i] <- D_star_final$trn_aviation_intl_d_L[D_star_final$iso == j & D_star_final$year == i] * D_star_final$share[D_star_final$iso == j & D_star_final$year == i]
+      }
+    }
+  }
+  #domestic business
+  for (j in unique(D_star_final$iso)) {
+    for (i in unique(D_star_final$year[D_star_final$iso == j])) { 
+      if (D_star_final$year[D_star_final$iso == j & D_star_final$year == i] >= 2019) { 
+        D_star_final$trn_aviation_intl_d_B[D_star_final$iso == j & D_star_final$year == i] <- D_star_final$trn_aviation_intl_d_B[D_star_final$iso == j & D_star_final$year == i] * D_star_final$share[D_star_final$iso == j & D_star_final$year == i]
+      }
+    }
+  }
+  D_star_final<- D_star_final[, c(1,11):= NULL] 
+  #adjust for the different length of international and domestic flights
+  D_star_final[, trn_aviation_intl_d_L := ifelse( year >= 2019 ,trn_aviation_intl_d_L * 0.65 , trn_aviation_intl_d_L) ]
+  D_star_final[, trn_aviation_intl_d_B := ifelse( year >= 2019 ,trn_aviation_intl_d_B * 0.65 , trn_aviation_intl_d_B) ]
   #load df with shares
   ## interpolate
   Domestic_shares = fread(file.path("C:/Users/franz/Documents/R/Master-Thesis/EDGE-T/Export Data/Domestic_shares.csv"), sep=";", header = T)
@@ -452,13 +477,15 @@ if (REMIND_scenario == "SSP1") {
   Domestic_shares[, shares_d_B := ifelse( year == 2005 , top_domestic_business, shares_d_B) ]
   #adjust for very larger countries
   Domestic_shares[, shares_d_L := ifelse( year == 2100 & iso == "RUS" , special_country_floor_leisure , shares_d_L) ]
-  Domestic_shares[, shares_d_B := ifelse( year == 2100 & iso == "RUS"  , special_country_floor_business , shares_d_L) ]
+  Domestic_shares[, shares_d_B := ifelse( year == 2100 & iso == "RUS"  , special_country_floor_business , shares_d_B) ]
   Domestic_shares[, shares_d_L := ifelse( year == 2100 & iso == "USA" , special_country_floor_leisure , shares_d_L) ]
-  Domestic_shares[, shares_d_B := ifelse( year == 2100 & iso == "USA"  , special_country_floor_business , shares_d_L) ]
+  Domestic_shares[, shares_d_B := ifelse( year == 2100 & iso == "USA"  , special_country_floor_business , shares_d_B) ]
   Domestic_shares[, shares_d_L := ifelse( year == 2100 & iso == "CAN" , special_country_floor_leisure , shares_d_L) ]
-  Domestic_shares[, shares_d_B := ifelse( year == 2100 & iso == "CAN"  , special_country_floor_business , shares_d_L) ]
+  Domestic_shares[, shares_d_B := ifelse( year == 2100 & iso == "CAN"  , special_country_floor_business , shares_d_B) ]
   Domestic_shares[, shares_d_L := ifelse( year == 2100 & iso == "AUS" , special_country_floor_leisure , shares_d_L) ]
-  Domestic_shares[, shares_d_B := ifelse( year == 2100 & iso == "AUS"  , special_country_floor_business , shares_d_L) ]
+  Domestic_shares[, shares_d_B := ifelse( year == 2100 & iso == "AUS"  , special_country_floor_business , shares_d_B) ]
+  Domestic_shares[, shares_d_L := ifelse( year == 2100 & iso == "ARE" , 0.1 , shares_d_L) ]
+  Domestic_shares[, shares_d_B := ifelse( year == 2100 & iso == "BHR"  , 0.1 , shares_d_B) ]
   Domestic_shares=melt(Domestic_shares,id.vars = c("iso","year"))
   Domestic_shares=approx_dt(dt = Domestic_shares, ## database to interpolate
                          xdata = seq(2005,2100), ## time steps on which to interpolate
@@ -472,7 +499,7 @@ if (REMIND_scenario == "SSP1") {
   #domestic leisure
     for (j in unique(D_star_final$iso)) {
       for (i in unique(D_star_final$year[D_star_final$iso == j])) { 
-        if (D_star_final$year[D_star_final$iso == j & D_star_final$year == i] > 2019) { 
+        if (D_star_final$year[D_star_final$iso == j & D_star_final$year == i] > 2005) { 
           D_star_final$trn_aviation_intl_d_L[D_star_final$iso == j & D_star_final$year == i] <- D_star_final$trn_aviation_intl_d_L[ D_star_final$iso == j & D_star_final$year == i] * D_star_final$shares_d_L[ D_star_final$iso == j & D_star_final$year == i]
         }
       }
@@ -480,7 +507,7 @@ if (REMIND_scenario == "SSP1") {
   #domestic business
   for (j in unique(D_star_final$iso)) {
     for (i in unique(D_star_final$year[D_star_final$iso == j])) { 
-      if (D_star_final$year[D_star_final$iso == j & D_star_final$year == i] > 2019) { 
+      if (D_star_final$year[D_star_final$iso == j & D_star_final$year == i] > 2005) { 
         D_star_final$trn_aviation_intl_d_B[D_star_final$iso == j & D_star_final$year == i] <- D_star_final$trn_aviation_intl_d_B[ D_star_final$iso == j & D_star_final$year == i] * D_star_final$shares_d_B[ D_star_final$iso == j & D_star_final$year == i]
       }
     }
