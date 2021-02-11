@@ -125,8 +125,14 @@ if (REMIND_scenario == "SSP1") {
   
   CONV_2005USD_1990USD = 0.67
   
+  #Income Elasticity starting values
+  
+  high_IE = 1.75
+  medium_IE= 1.546
+  low_IE = 1
   
   ## Create a dt with GDP, POP and GDP_cap with EDGE regions
+  iso_mapping <-read_csv("C:/Users/franz/Documents/R/Master-Thesis/EDGE-T/Export Data/regionmappingR10.csv")
   GDP_POP = getRMNDGDPcap(scenario = REMIND_scenario)
   setnames(GDP_POP, old = "weight", new = "GDP_val")
   ## create ct with the various elasticities
@@ -141,6 +147,8 @@ if (REMIND_scenario == "SSP1") {
                                             "price_elasticity_freight_sm",
                                             "income_elasticity_freight_lo",
                                             "price_elasticity_freight_lo"))
+  tmp<-merge( tmp, iso_mapping[,c(2,3)], by = c("iso"), all.x=TRUE)
+  
   ## define max and min values of the elasticities
   ## pass sm
   tmp[, rich := ifelse(var == "income_elasticity_pass_sm", 0.2, NA)]
@@ -148,14 +156,34 @@ if (REMIND_scenario == "SSP1") {
   tmp[, norm := ifelse(var == "income_elasticity_pass_sm", 1, NA)]
   tmp[, norm := ifelse(var == "price_elasticity_pass_sm", -1.25, norm)]
   ## pass lo_L
-  tmp[, rich := ifelse(var == "income_elasticity_pass_lo_L", 1.546, rich)]
+  tmp[, rich := ifelse(var == "income_elasticity_pass_lo_L", medium_IE, rich)]
+  tmp[, rich := ifelse(var == "income_elasticity_pass_lo_L" & iso_region == "R10REST_ASIA", low_IE, rich)]
+  tmp[, rich := ifelse(var == "income_elasticity_pass_lo_L" & iso_region == "R10MIDDLE_EAST", low_IE, rich)]
+  tmp[, rich := ifelse(var == "income_elasticity_pass_lo_L" & iso_region == "R10AFRICA", high_IE, rich)]
+  tmp[, rich := ifelse(var == "income_elasticity_pass_lo_L" & iso_region == "R10INDIA+", high_IE, rich)]
+  tmp[, rich := ifelse(var == "income_elasticity_pass_lo_L" & iso_region == "R10CHINA+", high_IE, rich)]
   tmp[, rich := ifelse(var == "price_elasticity_pass_lo_L", -0.05, rich)]
-  tmp[, norm := ifelse(var == "income_elasticity_pass_lo_L", 1.546, norm)]
+  tmp[, norm := ifelse(var == "income_elasticity_pass_lo_L", medium_IE, norm)]
+  tmp[, norm := ifelse(var == "income_elasticity_pass_lo_L" & iso_region == "R10REST_ASIA", low_IE, norm)]
+  tmp[, norm := ifelse(var == "income_elasticity_pass_lo_L" & iso_region == "R10MIDDLE_EAST", low_IE, norm)]
+  tmp[, norm := ifelse(var == "income_elasticity_pass_lo_L" & iso_region == "R10AFRICA", high_IE, norm)]
+  tmp[, norm := ifelse(var == "income_elasticity_pass_lo_L" & iso_region == "R10INDIA+", high_IE, norm)]
+  tmp[, norm := ifelse(var == "income_elasticity_pass_lo_L" & iso_region == "R10CHINA+", high_IE, norm)]
   tmp[, norm := ifelse(var == "price_elasticity_pass_lo_L", -1, norm)]
   ## pass lo_B
-  tmp[, rich := ifelse(var == "income_elasticity_pass_lo_B", 1.546, rich)]
+  tmp[, rich := ifelse(var == "income_elasticity_pass_lo_B", medium_IE, rich)]
+  tmp[, rich := ifelse(var == "income_elasticity_pass_lo_B" & iso_region == "R10REST_ASIA", low_IE, rich)]
+  tmp[, rich := ifelse(var == "income_elasticity_pass_lo_B" & iso_region == "R10MIDDLE_EAST", low_IE, rich)]
+  tmp[, rich := ifelse(var == "income_elasticity_pass_lo_B" & iso_region == "R10AFRICA", high_IE, rich)]
+  tmp[, rich := ifelse(var == "income_elasticity_pass_lo_B" & iso_region == "R10INDIA+", high_IE, rich)]
+  tmp[, rich := ifelse(var == "income_elasticity_pass_lo_B" & iso_region == "R10CHINA+", high_IE, rich)]
   tmp[, rich := ifelse(var == "price_elasticity_pass_lo_B", -0.05, rich)]
-  tmp[, norm := ifelse(var == "income_elasticity_pass_lo_B", 1.546, norm)]
+  tmp[, norm := ifelse(var == "income_elasticity_pass_lo_B", medium_IE, norm)]
+  tmp[, norm := ifelse(var == "income_elasticity_pass_lo_B" & iso_region == "R10REST_ASIA", low_IE, norm)]
+  tmp[, norm := ifelse(var == "income_elasticity_pass_lo_B" & iso_region == "R10MIDDLE_EAST", low_IE, norm)]
+  tmp[, norm := ifelse(var == "income_elasticity_pass_lo_B" & iso_region == "R10AFRICA", high_IE, norm)]
+  tmp[, norm := ifelse(var == "income_elasticity_pass_lo_B" & iso_region == "R10INDIA+", high_IE, norm)]
+  tmp[, norm := ifelse(var == "income_elasticity_pass_lo_B" & iso_region == "R10CHINA+", high_IE, norm)]
   tmp[, norm := ifelse(var == "price_elasticity_pass_lo_B", -1, norm)]
   ## freight sm
   tmp[, rich := ifelse(var == "income_elasticity_freight_sm", 0.4, rich)]
@@ -171,10 +199,11 @@ if (REMIND_scenario == "SSP1") {
   if (smartlifestyle) {
     tmp[grep("income", var), rich := 0.2*rich]
   }
-  
+  #drop mapping again
+  tmp<-tmp[,c(1,2,4,5)]
   #adjust rest of the elasticities
   price_el = merge(price_el, tmp, by = "iso", allow.cartesian = TRUE)
-  price_el[, eps := ifelse(GDP_cap >= floor(GDP_cap[iso=="JPN" & year == 2020]), rich, NA)]
+'  price_el[, eps := ifelse(GDP_cap >= floor(GDP_cap[iso=="JPN" & year == 2020]), rich, NA)]
   price_el[, eps := ifelse(GDP_cap == min(GDP_cap), norm, eps)]
   
   ## interpolate of gdpcap values
@@ -183,10 +212,22 @@ if (REMIND_scenario == "SSP1") {
                        xcol = "GDP_cap",
                        ycol="eps",
                        idxcols="var",
-                       extrapolate = TRUE)
+                       extrapolate = TRUE)'
   iso_mapping <-read_csv("C:/Users/franz/Documents/R/Master-Thesis/EDGE-T/Export Data/regionmappingR10.csv")
   price_el<-merge( price_el, iso_mapping[,c(2,3)], by = c("iso"), all.x=TRUE)
+  price_el=melt(price_el,id.vars = c("iso","year", "iso_region", "var", "POP"))
+  ## interpolate
+  price_el=approx_dt(dt = price_el, ## database to interpolate
+                         xdata = seq(1965,2150,1), ## time steps on which to interpolate
+                         ycol = "value", ## column containing the data to interpolate
+                         xcol="year", ## x-axis of the interpolation, i.e. the years that you indeed have available
+                         idxcols=c("iso", "iso_region", "var", "variable", "POP"), ## equivalent of "group_by" in dplyr and "by=.(....)" in data.table
+                         extrapolate = T) ## extrapolate? i.e. min(xdata)<min(unique(dat$year))|max(xdata)>max(unique(dat$year))
   
+  ## back to previous format
+  price_el=dcast(price_el,iso+year+iso_region+var+POP~variable,value.var="value")
+  #create eps
+  price_el[, ("eps"):=rich]
   #adjust only the international aviation
   price_el_int_aviation_L <- price_el[var == "income_elasticity_pass_lo_L"]
   price_el_int_aviation_B <- price_el[var == "income_elasticity_pass_lo_B"]
@@ -194,18 +235,17 @@ if (REMIND_scenario == "SSP1") {
   
   #define tresholds and decay rate
   #couple decay rate to RPK_cap of baseline runs
-  RPK_cap_baseline_L = fread(file.path("C:/Users/franz/Documents/R/Master-Thesis/EDGE-T/Export Data/RPK_CAP_reference_leisure.csv"), sep=",", header = T)
-  RPK_cap_baseline_B = fread(file.path("C:/Users/franz/Documents/R/Master-Thesis/EDGE-T/Export Data/RPK_CAP_reference_business.csv"), sep=",", header = T)
+  RPK_cap_baseline_L = fread(file.path("C:/Users/franz/Documents/R/Master-Thesis/EDGE-T/Export Data/RPK_CAP_reference_master_international_leisure_real.csv"), sep=",", header = T)
+  RPK_cap_baseline_B = fread(file.path("C:/Users/franz/Documents/R/Master-Thesis/EDGE-T/Export Data/RPK_CAP_reference_master_international_business_real.csv"), sep=",", header = T)
   RPK_cap_baseline_L <- RPK_cap_baseline_L[scenario == REMIND_scenario]
   RPK_cap_baseline_B <- RPK_cap_baseline_B[scenario == REMIND_scenario]
   price_el_int_aviation_L_RPK = merge( price_el_int_aviation_L, RPK_cap_baseline_L[,c(1,2,5)], by = c("iso","year"),all.x = TRUE)
   price_el_int_aviation_B_RPK = merge( price_el_int_aviation_B, RPK_cap_baseline_B[,c(1,2,5)], by = c("iso","year"),all.x = TRUE)
   #subset data only for available RPK Data
-  #leisure
   price_el_int_aviation_L_RPK <- price_el_int_aviation_L_RPK[,decay_rate:= 1]
-  price_el_int_aviation_L_RPK <- subset(price_el_int_aviation_L_RPK, price_el_int_aviation_L_RPK$year <=2060 & price_el_int_aviation_L_RPK$year >=2020)
+  price_el_int_aviation_L_RPK <- subset(price_el_int_aviation_L_RPK, price_el_int_aviation_L_RPK$year <=2100 & price_el_int_aviation_L_RPK$year >=2020)
   price_el_int_aviation_B_RPK <- price_el_int_aviation_B_RPK[,decay_rate:= 1]
-  price_el_int_aviation_B_RPK <- subset(price_el_int_aviation_B_RPK, price_el_int_aviation_B_RPK$year <=2060 & price_el_int_aviation_B_RPK$year >=2020)
+  price_el_int_aviation_B_RPK <- subset(price_el_int_aviation_B_RPK, price_el_int_aviation_B_RPK$year <=2100 & price_el_int_aviation_B_RPK$year >=2020)
   #Loops that adjust the decay rate of  aviation
   #int aviation
   #Leisure Loop
@@ -244,7 +284,7 @@ if (REMIND_scenario == "SSP1") {
   
   for (j in unique(price_el_int_aviation_L$iso)) {
     for (i in unique(price_el_int_aviation_L$year[price_el_int_aviation_L$iso == j])) { 
-      if (price_el_int_aviation_L$year[price_el_int_aviation_L$iso == j & price_el_int_aviation_L$year == i] > 2060) { 
+      if (price_el_int_aviation_L$year[price_el_int_aviation_L$iso == j & price_el_int_aviation_L$year == i] > 2100) { 
         price_el_int_aviation_L$decay_rate[price_el_int_aviation_L$iso == j & price_el_int_aviation_L$year >= i] <- price_el_int_aviation_L$decay_rate[price_el_int_aviation_L$iso == j & price_el_int_aviation_L$year >= i] * decay_DR_L
       }
     }
@@ -261,7 +301,7 @@ if (REMIND_scenario == "SSP1") {
   
   for (j in unique(price_el_int_aviation_B$iso)) {
     for (i in unique(price_el_int_aviation_B$year[price_el_int_aviation_B$iso == j])) { 
-      if (price_el_int_aviation_B$year[price_el_int_aviation_B$iso == j & price_el_int_aviation_B$year == i] > 2060) { 
+      if (price_el_int_aviation_B$year[price_el_int_aviation_B$iso == j & price_el_int_aviation_B$year == i] > 2100) { 
         price_el_int_aviation_B$decay_rate[price_el_int_aviation_B$iso == j & price_el_int_aviation_B$year >= i] <- price_el_int_aviation_B$decay_rate[price_el_int_aviation_B$iso == j & price_el_int_aviation_B$year >= i] * decay_DR_B
       }
     }
@@ -282,12 +322,12 @@ if (REMIND_scenario == "SSP1") {
       }
     }
   }
+
   
   #adjust rest asia and africa otherwise it would be to high
   #international
   price_el_int_aviation_L[, eps := ifelse( iso_region %in% c("R10REST_ASIA", "R10AFRICA", "R10MIDDEL_EAST"), eps *0.75, eps )]
   price_el_int_aviation_B[, eps := ifelse( iso_region %in% c("R10REST_ASIA", "R10AFRICA", "R10MIDDLE_EAST"), eps *0.75, eps)]
-  
   #drop iso_region
   price_el_int_aviation_L[,c("iso_region", "RPK_CAP_L"):=NULL]
   price_el_int_aviation_B[,c("iso_region","RPK_CAP_B"):=NULL]
@@ -317,7 +357,16 @@ if (REMIND_scenario == "SSP1") {
   setnames(price_el, "income_elasticity_pass_lo_B.y", "income_elasticity_pass_lo_B")
   setnames(price_el, "GDP_cap.x", "GDP_cap")
   
+  GDP_POP=melt(GDP_POP,id.vars = c("iso","year","variable", "POP"))
+  GDP_POP=approx_dt(dt = GDP_POP, ## database to interpolate
+                     xdata = seq(1965,2150,1), ## time steps on which to interpolate
+                     ycol = "value", ## column containing the data to interpolate
+                     xcol="year", ## x-axis of the interpolation, i.e. the years that you indeed have available
+                     idxcols=c("iso", "variable","variable.1", "POP"), ## equivalent of "group_by" in dplyr and "by=.(....)" in data.table
+                     extrapolate = T) ## extrapolate? i.e. min(xdata)<min(unique(dat$year))|max(xdata)>max(unique(dat$year))
   
+  ## back to previous format
+  GDP_POP=dcast(GDP_POP,iso+year+variable++POP~variable.1,value.var="value")
   #calculate growth rates
   GDP_POP[,`:=`(index_GDP=GDP_val/shift(GDP_val), index_GDPcap=GDP_cap/shift(GDP_cap), index_POP=POP_val/shift(POP_val)), by=c("iso")]
   ## merge GDP_POP and price elasticity
@@ -330,9 +379,20 @@ if (REMIND_scenario == "SSP1") {
                 index_GDPcap_p_lo_L=index_GDPcap^income_elasticity_pass_lo_L,
                 index_GDPcap_p_lo_B=index_GDPcap^income_elasticity_pass_lo_B)]
   GDP_POP[,c("income_elasticity_freight_sm", "income_elasticity_freight_lo", "income_elasticity_pass_sm", "income_elasticity_pass_lo_L","income_elasticity_pass_lo_B") := NULL]
-  
   #order the prices according to the year, within the sector
   price_baseline=price_baseline[order(-frank(sector), year)]
+  price_baseline=melt(price_baseline,id.vars = c("iso","year", "sector"))
+  ## interpolate
+  price_baseline=approx_dt(dt = price_baseline, ## database to interpolate
+                     xdata = seq(1990,2100,1), ## time steps on which to interpolate
+                     ycol = "value", ## column containing the data to interpolate
+                     xcol="year", ## x-axis of the interpolation, i.e. the years that you indeed have available
+                     idxcols=c("iso", "sector", "variable"), ## equivalent of "group_by" in dplyr and "by=.(....)" in data.table
+                     extrapolate = T) ## extrapolate? i.e. min(xdata)<min(unique(dat$year))|max(xdata)>max(unique(dat$year))
+  
+  ## back to previous format
+  price_baseline=dcast(price_baseline,iso+year+sector~variable,value.var="value")
+  
   #calculate "index" which represent the growth of total price
   price_baseline[,index_price:=tot_price/shift(tot_price),by=c("iso","sector")]
   #select only the needed columns
@@ -366,6 +426,18 @@ if (REMIND_scenario == "SSP1") {
                         year)]
   #calculate demand at a sector level
   demand_tot_sector=tech_output[, .(demand_tot=sum(tech_output)), by=c("iso", "year", "sector")]
+  demand_tot_sector=melt(demand_tot_sector,id.vars = c("iso","year","sector"))
+  ## interpolate
+  demand_tot_sector=approx_dt(dt = demand_tot_sector, ## database to interpolate
+                     xdata = seq(1990,2010), ## time steps on which to interpolate
+                     ycol = "value", ## column containing the data to interpolate
+                     xcol="year", ## x-axis of the interpolation, i.e. the years that you indeed have available
+                     idxcols=c("iso", "sector","variable"), ## equivalent of "group_by" in dplyr and "by=.(....)" in data.table
+                     extrapolate = T) ## extrapolate? i.e. min(xdata)<min(unique(dat$year))|max(xdata)>max(unique(dat$year))
+  
+  ## back to previous format
+  demand_tot_sector=dcast(demand_tot_sector,iso+year+sector~variable,value.var="value")
+  
   #from long to wide format, so that the df has separate columns for all transport modes
   demand_tot_sector=dcast(demand_tot_sector, iso + year  ~ sector, value.var = "demand_tot", fun.aggregate = sum, margins="sector")
   
@@ -392,8 +464,26 @@ if (REMIND_scenario == "SSP1") {
   #int aviation loop with forward pushing the historic data base
   demand_tot_sector_avi_L=tech_output_adj[, .(demand_tot=sum(tech_output_adj)), by=c("iso", "year", "sector")]
   demand_tot_sector_avi_B=tech_output_adj[, .(demand_tot=sum(tech_output_adj)), by=c("iso", "year", "sector")]
-  #Differentiate between different Trip Purposes in techoutput file and differentiate between domestic and leisure
-  demand_tot_sector_avi_B<-merge( demand_tot_sector_avi_B, iso_mapping[,c(2,3)], by = c("iso"), all.x=TRUE)
+  demand_tot_sector_avi_L=melt(demand_tot_sector_avi_L,id.vars = c("iso","year","sector"))
+  demand_tot_sector_avi_B=melt(demand_tot_sector_avi_B,id.vars = c("iso","year","sector"))
+  ## interpolate
+  demand_tot_sector_avi_L=approx_dt(dt = demand_tot_sector_avi_L, ## database to interpolate
+                              xdata = seq(1990,2020), ## time steps on which to interpolate
+                              ycol = "value", ## column containing the data to interpolate
+                              xcol="year", ## x-axis of the interpolation, i.e. the years that you indeed have available
+                              idxcols=c("iso", "sector","variable"), ## equivalent of "group_by" in dplyr and "by=.(....)" in data.table
+                              extrapolate = T) ## extrapolate? i.e. min(xdata)<min(unique(dat$year))|max(xdata)>max(unique(dat$year))
+  ## interpolate
+  demand_tot_sector_avi_B=approx_dt(dt = demand_tot_sector_avi_B, ## database to interpolate
+                                    xdata = seq(1990,2020), ## time steps on which to interpolate
+                                    ycol = "value", ## column containing the data to interpolate
+                                    xcol="year", ## x-axis of the interpolation, i.e. the years that you indeed have available
+                                    idxcols=c("iso", "sector","variable"), ## equivalent of "group_by" in dplyr and "by=.(....)" in data.table
+                                    extrapolate = T) ## extrapolate? i.e. min(xdata)<min(unique(dat$year))|max(xdata)>max(unique(dat$year))
+  
+  ## back to previous format
+  demand_tot_sector_avi_L=dcast(demand_tot_sector_avi_L,iso+year+sector~variable,value.var="value")
+  demand_tot_sector_avi_B=dcast(demand_tot_sector_avi_B,iso+year+sector~variable,value.var="value")
   #Split Leisure and Business
   demand_tot_sector_avi_L[,   demand_tot := ifelse(sector == "trn_aviation_intl"  ,demand_tot * 0.625, demand_tot) ]
   demand_tot_sector_avi_B[,   demand_tot := ifelse(sector == "trn_aviation_intl" ,demand_tot * 0.375, demand_tot) ]
@@ -423,19 +513,6 @@ if (REMIND_scenario == "SSP1") {
   #merge two files
   D_star_final=merge(D_star_else, D_star_avi,by = c("iso","year"),all.x = TRUE)
   D_star_final <- D_star_final[, c(3:7,11:17,19:28, 30:33):= NULL]
-  #linear interpolation of 5 year data to yearly data
-  ## long format
-  D_star_final=melt(D_star_final,id.vars = c("iso","year"))
-  ## interpolate
-  D_star_final=approx_dt(dt = D_star_final, ## database to interpolate
-                         xdata = seq(2005,2100), ## time steps on which to interpolate
-                         ycol = "value", ## column containing the data to interpolate
-                         xcol="year", ## x-axis of the interpolation, i.e. the years that you indeed have available
-                         idxcols=c("iso","variable"), ## equivalent of "group_by" in dplyr and "by=.(....)" in data.table
-                         extrapolate = T) ## extrapolate? i.e. min(xdata)<min(unique(dat$year))|max(xdata)>max(unique(dat$year))
-  
-  ## back to previous format
-  D_star_final=dcast(D_star_final,iso+year~variable,value.var="value")
   #domestic calcuation
   ############################
   D_star_final <- transform( D_star_final, trn_aviation_intl_d_L = trn_aviation_intl_L)
