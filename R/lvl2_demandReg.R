@@ -21,36 +21,36 @@ lvl2_demandReg <- function(tech_output, tech_output_adj, price_baseline, REMIND_
   #Input Data
   #RPK Treshold & Decay
   if (REMIND_scenario == "SSP1") {
-    decay_DR_L=0.8
+    decay_DR_L=0.7
     decay_treshold_L= 1300
   }else if (REMIND_scenario == "SSP2") {
-    decay_DR_L=0.90
-    decay_treshold_L= 1500
+    decay_DR_L=0.85
+    decay_treshold_L= 1350
   }else if (REMIND_scenario == "SSP3") {
-    decay_DR_L=0.90
-    decay_treshold_L= 1500
+    decay_DR_L=0.85
+    decay_treshold_L= 1350
   }else if (REMIND_scenario == "SSP4") {
-    decay_DR_L=0.90
-    decay_treshold_L= 1500
+    decay_DR_L=0.85
+    decay_treshold_L= 1350
   }else if (REMIND_scenario == "SSP5") {
-    decay_DR_L=0.99
+    decay_DR_L=0.95
     decay_treshold_L= 1600
   }else{}
   #mutate the decayrate for Income elasticity Business
   if (REMIND_scenario == "SSP1") {
-    decay_DR_B=0.7
+    decay_DR_B=0.65
     decay_treshold_B= 800
   }else if (REMIND_scenario == "SSP2") {
-    decay_DR_B=0.8
-    decay_treshold_B= 1000
+    decay_DR_B=0.7
+    decay_treshold_B= 850
   }else if (REMIND_scenario == "SSP3") {
-    decay_DR_B=0.8
-    decay_treshold_B= 1000
+    decay_DR_B=0.7
+    decay_treshold_B= 850
   }else if (REMIND_scenario == "SSP4") {
-    decay_DR_B=0.8
-    decay_treshold_B= 1000
+    decay_DR_B=0.7
+    decay_treshold_B= 850
   }else if (REMIND_scenario == "SSP5") {
-    decay_DR_B=0.90
+    decay_DR_B=0.85
     decay_treshold_B= 1200
   }else{}
   #GDP Treshold
@@ -79,8 +79,8 @@ lvl2_demandReg <- function(tech_output, tech_output_adj, price_baseline, REMIND_
   }else if (REMIND_scenario == "SSP4") {
     GDP_treshold_B= 50000
   }else if (REMIND_scenario == "SSP5") {
-    GDP_treshold_B= 550000
-  }else{}
+    GDP_treshold_B= 55000
+    }else{}
   
   #floor levels for domestic derivation
 if (REMIND_scenario == "SSP1") {
@@ -88,7 +88,7 @@ if (REMIND_scenario == "SSP1") {
     floor_domestic_business = 0.05
     top_domestic_leisure = 1
     top_domestic_business = 1
-    special_country_floor_leisure = 0.20
+    special_country_floor_leisure = 0.2
     special_country_floor_business = 0.15
   }else if (REMIND_scenario == "SSP2") {
     floor_domestic_leisure = 0.15
@@ -127,9 +127,9 @@ if (REMIND_scenario == "SSP1") {
   
   #Income Elasticity starting values
   
-  high_IE = 1.75
+  high_IE = 1.65
   medium_IE= 1.546
-  low_IE = 1
+  low_IE = 1.0
   
   ## Create a dt with GDP, POP and GDP_cap with EDGE regions
   iso_mapping <-read_csv("C:/Users/franz/Documents/R/Master-Thesis/EDGE-T/Export Data/regionmappingR10.csv")
@@ -166,6 +166,7 @@ if (REMIND_scenario == "SSP1") {
   tmp[, norm := ifelse(var == "income_elasticity_pass_lo_L", medium_IE, norm)]
   tmp[, norm := ifelse(var == "income_elasticity_pass_lo_L" & iso_region == "R10REST_ASIA", low_IE, norm)]
   tmp[, norm := ifelse(var == "income_elasticity_pass_lo_L" & iso_region == "R10MIDDLE_EAST", low_IE, norm)]
+  tmp[, norm := ifelse(var == "income_elasticity_pass_lo_L" & iso_region == "R10NORTH_AM", low_IE, norm)]
   tmp[, norm := ifelse(var == "income_elasticity_pass_lo_L" & iso_region == "R10AFRICA", high_IE, norm)]
   tmp[, norm := ifelse(var == "income_elasticity_pass_lo_L" & iso_region == "R10INDIA+", high_IE, norm)]
   tmp[, norm := ifelse(var == "income_elasticity_pass_lo_L" & iso_region == "R10CHINA+", high_IE, norm)]
@@ -181,6 +182,7 @@ if (REMIND_scenario == "SSP1") {
   tmp[, norm := ifelse(var == "income_elasticity_pass_lo_B", medium_IE, norm)]
   tmp[, norm := ifelse(var == "income_elasticity_pass_lo_B" & iso_region == "R10REST_ASIA", low_IE, norm)]
   tmp[, norm := ifelse(var == "income_elasticity_pass_lo_B" & iso_region == "R10MIDDLE_EAST", low_IE, norm)]
+  tmp[, norm := ifelse(var == "income_elasticity_pass_lo_B" & iso_region == "R10NORTH_AM", low_IE, norm)]
   tmp[, norm := ifelse(var == "income_elasticity_pass_lo_B" & iso_region == "R10AFRICA", high_IE, norm)]
   tmp[, norm := ifelse(var == "income_elasticity_pass_lo_B" & iso_region == "R10INDIA+", high_IE, norm)]
   tmp[, norm := ifelse(var == "income_elasticity_pass_lo_B" & iso_region == "R10CHINA+", high_IE, norm)]
