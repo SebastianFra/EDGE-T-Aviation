@@ -122,6 +122,19 @@ lvl0_GCAMraw <- function(input_folder, GCAM_dir = "GCAM"){
   
   tech_output = distribute_logit(tech_output,colname = "subsector",extracol = "supplysector")
   tech_output = rename_region(tech_output)
+'  #adjust the historical data based on bunker data
+  bunker = fread(file.path("C:/Users/franz/Documents/R/Master-Thesis/EDGE-T/Export Data/Bunker_data_2016.csv"), sep=";", header = T)
+  iso_mapping = fread(file.path("C:/Users/franz/Documents/R/Master-Thesis/EDGE-T/Export Data/regionmappingR10.csv"), sep=",", header = T)
+  bunker <- bunker %>%rename(name = Nation)
+  bunker <- bunker %>%rename(year = Year)
+  bunker <- bunker[,c(1,2,3)]
+  bunker$name <- tolower(bunker$name)
+  bunker$name <- str_to_title(bunker$name)
+  bunker<-merge(bunker,iso_mapping, by = c("name"), all.x=TRUE)
+  bunker <- subset(bunker, bunker$year <=2020 & bunker$year >=2010)
+  tech_output<- tech_output %>% filter(sector == "trn_aviation_intl")
+  tech_output <- subset(tech_output, tech_output$year <=2020 & tech_output$year >=2010)
+  browser()'
   
   ## speed motorized modes
   speed_mot = fread(file.path(GCAM_folder, "L254.tranSubsectorSpeed.csv"), skip=4)
