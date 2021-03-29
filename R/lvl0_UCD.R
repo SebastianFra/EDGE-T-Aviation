@@ -8,6 +8,7 @@
 #'   non_fuel_split in 1990$/pkt (1990USD/tkm)
 #'
 #' @param GCAM_data GCAM based data
+#' @param GDP_country GDP ISO level
 #' @param EDGE_scenario EDGE transport scenario specifier
 #' @param REMIND_scenario SSP scenario
 #' @param GCAM2ISO_MAPPING GCAM2iso mapping
@@ -23,16 +24,19 @@
 #'
 #' @importFrom stats approx
 #' @importFrom utils read.csv
+#' @importFrom rmndt approx_dt disaggregate_dt aggregate_dt
 
 
-lvl0_loadUCD <- function(GCAM_data, EDGE_scenario, REMIND_scenario, GCAM2ISO_MAPPING, input_folder, years, UCD_dir="UCD", enhancedtech, selfmarket_taxes, rebates_febates, techswitch){
-  subsector_L1 <- vehicle_type <- size.class <- UCD_region <- scenario <- `.` <- technology <- vehicle_type_PSI <- tot_purchase_euro2017 <- y2040 <- y2015 <- y2100 <- variable <- region <- EDGE_category <- value <- Xyear <- UCD_region <- size.class <- mileage <- UCD_technology <- Capital_costs_purchase <- non_fuel_cost <- non_fuel_OPEX <- Operating_subsidy <- Operating_costs_total_non_fuel <- Operating_costs_tolls <- Capital_costs_total <- Capital_costs_other <- Capital_costs_infrastructure <- CAPEX_and_non_fuel_OPEX <- CAPEX <- Operating_costs_maintenance <- Operating_costs_registration_and_insurance <- NULL
+lvl0_loadUCD <- function(GCAM_data, GDP_country, EDGE_scenario, REMIND_scenario, GCAM2ISO_MAPPING, input_folder, years, UCD_dir="UCD", enhancedtech, selfmarket_taxes, rebates_febates, techswitch){
+  subsector_L1 <- vehicle_type <- size.class <- UCD_region <- scenario <- `.` <- technology <- vehicle_type_PSI <- tot_purchase_euro2017 <- y2040 <- y2015 <- y2100 <- variable <- region <- EDGE_category <- value <- Xyear <- UCD_region <- size.class <- mileage <- UCD_technology <- Capital_costs_purchase <- non_fuel_cost <- non_fuel_OPEX <- Operating_subsidy <- Operating_costs_tolls <- Capital_costs_total <- Capital_costs_other <- Capital_costs_infrastructure <- CAPEX_and_non_fuel_OPEX <- CAPEX <- Operating_costs_maintenance <- Operating_costs_registration_and_insurance <- NULL
   #==== Load data ====
   #readUCD
   #load database UCD transportation
   UCD2iso=fread(file.path(input_folder, UCD_dir, "mapping_UCDdb_ISO.csv"))
   logit_category=GCAM_data[["logit_category"]]
   UCD_transportation_database = fread(file.path(input_folder, UCD_dir, "UCD_transportation_database.csv"), stringsAsFactors=F, header = TRUE)
+  ## simplify costs removing non used data
+  UCD_transportation_database = UCD_transportation_database[!size.class %in% c("Three-Wheeler", "Heavy Bus", "Light Bus")]
   setnames(UCD_transportation_database, old = c("2005", "2020", "2035", "2050", "2065", "2080", "2095"), new = c("X2005", "X2020", "X2035", "X2050", "X2065", "X2080", "X2095"))
   ## read load factor from the previous step, FIXME improper nmes again, not clear who should contain
   load_factor=GCAM_data[["load_factor"]]
@@ -140,13 +144,11 @@ lvl0_loadUCD <- function(GCAM_data, EDGE_scenario, REMIND_scenario, GCAM2ISO_MAP
     tmp=copy(psi_costs)
     tmp[,region:="Eastern Europe"]
     psi_costs=rbind(psi_costs,tmp)
-
     setnames(psi_costs,old="variable",new="year")
     psi_costs[, EDGE_category:=ifelse(technology=="ICEV-g","NG",NA)]
     psi_costs[, EDGE_category:=ifelse(technology %in% c("ICEV-p","ICEV-d"),"Liquids",EDGE_category)]
     psi_costs[, EDGE_category:=ifelse(grepl("PHEV",technology),"Hybrid Electric",EDGE_category)]
-    psi_costs[, EDGE_category:=ifelse(grepl("HEV-p",technology),"Hybrid Liquids",EDGE_category)]
-    psi_costs[,EDGE_category:=ifelse(is.na(EDGE_category),technology,EDGE_category)]
+    psi_costs[, EDGE_category:=ifelse(is.na(EDGE_category),technology,EDGE_category)]
 
     ## average on the EDGE category
     psi_costs=psi_costs[,.(value=mean(value)),by=c("EDGE_category","region","vehicle_type","year")]
@@ -174,7 +176,7 @@ lvl0_loadUCD <- function(GCAM_data, EDGE_scenario, REMIND_scenario, GCAM2ISO_MAP
                   variable=="Capital costs (purchase)" &
                   size.class %in% unique(psi_costs$size.class),]
 
-    tmp = rbind(tmp, tmp[UCD_technology == "Hybrid Liquids"][, c("UCD_technology", "UCD_fuel") := list("Hybrid Electric", "Liquids-Electricity")])
+    tmp = rbind(tmp, tmp[UCD_technology == "BEV"][, c("UCD_technology", "UCD_fuel") := list("Hybrid Electric", "Liquids-Electricity")])
 
     ## delete column with data that is going to come from PSI
     tmp[,c("value"):=NULL]
@@ -187,8 +189,8 @@ lvl0_loadUCD <- function(GCAM_data, EDGE_scenario, REMIND_scenario, GCAM2ISO_MAP
     ## delete mini cars as they are added otherwise later (FIXME)
     tmp=tmp[size.class!="Mini Car",]
 
-    ## attribute the other costs components from Hybrid Liquids to Hybrid Electic for EU
-    costs_UCD = rbind(costs_UCD, costs_UCD[UCD_region %in% c("Western Europe", "Eastern Europe") & UCD_technology == "Hybrid Liquids"][, c("UCD_technology", "UCD_fuel") := list("Hybrid Electric", "Liquids-Electricity")])
+    ## attribute the other costs components from BEVs to Hybrid Electic for EU
+    costs_UCD = rbind(costs_UCD, costs_UCD[mode %in% "LDV_4W" & UCD_region %in% c("Western Europe", "Eastern Europe") & UCD_technology == "BEV"][, c("UCD_technology", "UCD_fuel") := list("Hybrid Electric", "Liquids-Electricity")])
 
     ## merge back with the original database
     costs_UCD=merge(costs_UCD[!(UCD_region %in% c("Western Europe", "Eastern Europe") & ## EU regions trends come from PSI
@@ -203,6 +205,7 @@ lvl0_loadUCD <- function(GCAM_data, EDGE_scenario, REMIND_scenario, GCAM2ISO_MAP
 
   calc_non_energy_price=function(UCD_transportation_database, GCAM2ISO_MAPPING){
     loadFactor <- price_component <- X_UCD_years <- non_fuel_price <- UCD_fuel <- type <- UCD_sector <- vkm.veh <- ID <- NULL
+    subsector_L3 <- NULL
     #=== Calculations ====
     UCD_cost <- UCD_transportation_database[unit %in% c("2005$/veh/yr", "2005$/veh", "2005$/vkt"),]
 
@@ -254,8 +257,6 @@ lvl0_loadUCD <- function(GCAM_data, EDGE_scenario, REMIND_scenario, GCAM2ISO_MAP
 
     non_energy_cost[, UCD_region := gsub("_"," ", UCD_region)]
 
-    #fix threewheelers for China, their UCD_fuel is called "NG" instead of Natural Gas
-    non_energy_cost[UCD_region=="China" & size.class=="Three-Wheeler" & UCD_technology=="NG", UCD_fuel :="Natural Gas"]
     non_energy_cost = non_energy_cost[, .(year, UCD_region, UCD_sector, mode, UCD_technology, variable, value, size.class)]
     non_energy_cost = non_energy_cost[year %in% years,]
     ## attribute categories coherent with the rest of the model
@@ -298,10 +299,65 @@ lvl0_loadUCD <- function(GCAM_data, EDGE_scenario, REMIND_scenario, GCAM2ISO_MAP
                       by = c("UCD_region", "size.class", "UCD_technology", "type")]
     }
 
+    ## add FCEVs and Electric trucks
+    ## include Electric buses, electric trucks, h2 buses, h2 trucks
+    ## documentation for this section is in the paper Rottoli et al 2020
+    trucks = unique(non_energy_cost[grepl("Truck", mode) & !grepl("Light", mode), mode])
+    buses = unique(non_energy_cost[grepl("Bus", mode), mode])
+    truck_buses = c(trucks, buses)
+    electric = non_energy_cost[mode %in% truck_buses & UCD_technology == "Liquids"][, c("UCD_technology", "CAPEX_and_non_fuel_OPEX") := list("Electric", 0)]
+    hydrogen = non_energy_cost[mode %in% truck_buses & UCD_technology == "Liquids"][, c("UCD_technology", "CAPEX_and_non_fuel_OPEX") := list("FCEV", 0)]
+    liquids = non_energy_cost[mode %in% truck_buses & UCD_technology == "Liquids"]
+    newtech = rbind(electric, liquids, hydrogen)
+    ## documentation for this section is in the paper Rottoli et al 2020
+    ## cost of electric truck is 60% more than a as conventional truck today
+    newtech[mode %in% trucks & year <= 2020, CAPEX_and_non_fuel_OPEX := ifelse(UCD_technology == "Electric", 1.6*CAPEX_and_non_fuel_OPEX[UCD_technology=="Liquids"], CAPEX_and_non_fuel_OPEX), by = c("UCD_region", "year", "mode")]
+    ## costs of electric truck breaks even in 2030
+    newtech[mode %in% trucks & year >= 2030, CAPEX_and_non_fuel_OPEX := ifelse(UCD_technology == "Electric", CAPEX_and_non_fuel_OPEX[UCD_technology=="Liquids"], CAPEX_and_non_fuel_OPEX), by = c("UCD_region", "year", "mode")]
+
+    ## cost of a FCEV truck is 80% more than a as conventional truck today
+    newtech[mode %in% trucks & year <= 2020, CAPEX_and_non_fuel_OPEX := ifelse(UCD_technology == "FCEV", 1.8*CAPEX_and_non_fuel_OPEX[UCD_technology=="Liquids"], CAPEX_and_non_fuel_OPEX), by = c("UCD_region", "year", "mode")]
+    ## costs of FCEV truck breaks is 10% more than a conventional truck in 2030
+    newtech[mode %in% trucks & year == 2030, CAPEX_and_non_fuel_OPEX := ifelse(UCD_technology == "FCEV", 1.1*CAPEX_and_non_fuel_OPEX[UCD_technology=="Liquids"], CAPEX_and_non_fuel_OPEX), by = c("UCD_region", "year", "mode")]
+    ## break even for FCEV truck is assumed to occur in 2035
+    newtech[mode %in% trucks & year >= 2035, CAPEX_and_non_fuel_OPEX := ifelse(UCD_technology == "FCEV", CAPEX_and_non_fuel_OPEX[UCD_technology=="Liquids"], CAPEX_and_non_fuel_OPEX), by = c("UCD_region", "year", "mode")]
+
+    ## for electric and FCEV trucks, in between 2020 and 2030 the cost follows a linear trend
+    newtech[mode %in% trucks & year <= 2030 & year >= 2020 & UCD_technology %in% c("Electric", "FCEV"),
+            CAPEX_and_non_fuel_OPEX := (CAPEX_and_non_fuel_OPEX[year == 2020] - CAPEX_and_non_fuel_OPEX[year == 2030])*(1 - (year - 2020)/(2030 - 2020)) + CAPEX_and_non_fuel_OPEX[year == 2030],
+            by = c("UCD_region", "UCD_technology", "mode")]
+
+    ## cost of electric buses is 40% more of a conventional bus today
+    newtech[mode %in% buses & year <= 2020, CAPEX_and_non_fuel_OPEX := ifelse(UCD_technology %in% c("Electric", "FCEV"), 1.4*CAPEX_and_non_fuel_OPEX[UCD_technology=="Liquids"], CAPEX_and_non_fuel_OPEX), by = c("UCD_region", "year", "mode")]
+    ## electric and FCEV buses breaks-even with conventional buses in 2030
+    newtech[mode %in% buses & year >= 2030, CAPEX_and_non_fuel_OPEX := ifelse(UCD_technology %in% c("Electric", "FCEV"), CAPEX_and_non_fuel_OPEX[UCD_technology=="Liquids"], CAPEX_and_non_fuel_OPEX), by = c("UCD_region", "year", "mode")]
+    ## for electric and FCEV buses, in between 2020 and 2030 the cost follows a linear trend
+    newtech[mode %in% buses & year <= 2030 & year >= 2020 & UCD_technology %in% c("Electric", "FCEV"),
+            CAPEX_and_non_fuel_OPEX := (CAPEX_and_non_fuel_OPEX[year == 2020]-CAPEX_and_non_fuel_OPEX[year == 2030])*(1 - (year - 2020)/(2030 - 2020)) + CAPEX_and_non_fuel_OPEX[year == 2030], by = c("UCD_region", "UCD_technology", "mode")]
+
+    non_energy_cost = rbind(non_energy_cost, newtech[UCD_technology!="Liquids"])
+
+    ## add hydrogen airplanes
+    newtech = non_energy_cost[mode %in% "Air Domestic" & UCD_technology == "Liquids"][, UCD_technology := "Hydrogen"]
+    ## CAPEX of hydrogen airplanes is assumed today 5 times more expensive than a conventional airplane (i.e. not present in the market)
+    newtech[mode %in% "Air Domestic" & year <= 2020,
+            CAPEX := 5*CAPEX]
+    ## following https://www.fch.europa.eu/sites/default/files/FCH%20Docs/20200507_Hydrogen%20Powered%20Aviation%20report_FINAL%20web%20%28ID%208706035%29.pdf
+    ## maintenance costs are 50% higher than than a liquids fuelled airplane
+    newtech[mode %in% "Air Domestic" & year >= 2020 & UCD_technology == "Hydrogen",
+            non_fuel_OPEX := 1.5*non_fuel_OPEX]
+    ## for hydrogen airplanes, in between 2020 and 2040 the cost follows a linear trend, and reaches a value 30% higher than a liquids fuelled airplane
+    newtech[mode %in% "Air Domestic" & year >= 2020 & UCD_technology == "Hydrogen",
+            CAPEX := ifelse(year <= 2040, CAPEX[year==2020] + (1.3*CAPEX[year == 2100]-CAPEX[year==2020]) * (year-2020) / (2100-2020), 1.3*CAPEX[year == 2100]),
+            by = c("UCD_region", "UCD_technology", "mode")]
+
+
+    non_energy_cost = rbind(non_energy_cost, newtech)
+
+
     ## calculate total fuel price
     non_energy_cost[,non_fuel_cost:=non_fuel_OPEX+
                       Operating_subsidy+
-                      Operating_costs_total_non_fuel+
                       Operating_costs_tolls+
                       Operating_costs_registration_and_insurance+
                       Operating_costs_maintenance+
@@ -315,7 +371,7 @@ lvl0_loadUCD <- function(GCAM_data, EDGE_scenario, REMIND_scenario, GCAM2ISO_MAP
     non_energy_cost[, type := "normal"]
     ## convert back to long format with the newly calculated total non fuel price
     non_energy_cost=melt(non_energy_cost,id.vars = c("year","UCD_region","UCD_sector", "mode","UCD_technology","size.class", "type"),
-                         measure.vars=c("non_fuel_OPEX","Operating_subsidy", "Operating_costs_total_non_fuel","Operating_costs_tolls", "Operating_costs_registration_and_insurance","Operating_costs_maintenance","Capital_costs_total","Capital_costs_purchase","Capital_costs_other","Capital_costs_infrastructure","CAPEX_and_non_fuel_OPEX","CAPEX","non_fuel_cost"),
+                         measure.vars=c("non_fuel_OPEX","Operating_subsidy", "Operating_costs_tolls", "Operating_costs_registration_and_insurance","Operating_costs_maintenance","Capital_costs_total","Capital_costs_purchase","Capital_costs_other","Capital_costs_infrastructure","CAPEX_and_non_fuel_OPEX","CAPEX","non_fuel_cost"),
                          variable.name="price_component",
                          value.name="value")
 
@@ -325,17 +381,15 @@ lvl0_loadUCD <- function(GCAM_data, EDGE_scenario, REMIND_scenario, GCAM2ISO_MAP
     non_energy_cost[,mode:=ifelse(mode=="Air Domestic","Domestic Aviation",mode)]
     non_energy_cost[,mode:=ifelse(mode=="Ship International","International Ship",mode)]
     non_energy_cost[,mode:=ifelse(mode=="Ship Domestic","Domestic Ship",mode)]
-
     ## downscale to ISO level
     non_energy_cost=disaggregate_dt(non_energy_cost, UCD2iso, fewcol = "UCD_region",
                                     datacols = c("mode","UCD_technology","price_component", "type"))
 
     ## upscale to regions
-    gdp <- getRMNDGDP(paste0("gdp_", REMIND_scenario), usecache = T)
-
+    gdp_country=copy(GDP_country)
     non_energy_cost=aggregate_dt(non_energy_cost, GCAM2ISO_MAPPING,
                                  datacols = c("mode", "UCD_technology", "price_component", "type"),
-                                 weights = gdp)
+                                 weights = gdp_country)
     ## only EU-15 and EU-12 should have Hybrid Electric
     non_energy_cost = non_energy_cost[(UCD_technology == "Hybrid Electric" & region %in% c("EU-12", "EU-15"))|(UCD_technology != "Hybrid Electric"),]
     dups <- duplicated(non_energy_cost, by=c("region", "UCD_technology", "mode","year","price_component", "type"))
@@ -348,18 +402,28 @@ lvl0_loadUCD <- function(GCAM_data, EDGE_scenario, REMIND_scenario, GCAM2ISO_MAP
 
 
     setnames(non_energy_cost,old=c("mode","UCD_technology"),new=c("univocal_name","technology"))
-
-    ## add logit_category for Hybrid Electric
-    logit_category = rbind(logit_category, logit_category[technology == "Hybrid Liquids"][, technology := "Hybrid Electric"])
-
+    ## add logit_category for Hybrid Electric, Electric and FCEVs trucks and buses, hydrogen airplanes
+    logit_category = rbind(logit_category, logit_category[technology == "BEV"][, technology := "Hybrid Electric"])
+    logit_category = rbind(logit_category, logit_category[technology == "Liquids" & vehicle_type %in% c(truck_buses, "Bus_tmp_vehicletype")][, technology := "Electric"])
+    logit_category = rbind(logit_category, logit_category[technology == "Liquids" & vehicle_type %in% c(truck_buses, "Bus_tmp_vehicletype")][, technology := "FCEV"])
+    logit_category = rbind(logit_category, logit_category[technology == "Liquids" & subsector_L3 == "Domestic Aviation"][, technology := "Hydrogen"])
 
     non_energy_cost=merge(non_energy_cost, logit_category, all=FALSE, by = c("univocal_name","technology"))
     non_energy_cost[, c("univocal_name") := NULL]
+    non_energy_cost[vehicle_type %in% c("3W Rural", "Truck (0-1t)", "Truck (0-3.5t)", "Truck (0-4.5t)", "Truck (0-2t)", "Truck (0-6t)", "Truck (2-5t)", "Truck (0-2.7t)", "Truck (2.7-4.5t)"), vehicle_type := "Truck (0-3.5t)"]
+    non_energy_cost[vehicle_type %in% c("Truck (4.5-12t)", "Truck (6-14t)", "Truck (5-9t)", "Truck (6-15t)", "Truck (4.5-15t)", "Truck (1-6t)"), vehicle_type := "Truck (7.5t)"]
+    non_energy_cost[vehicle_type %in% c("Truck (>12t)", "Truck (6-30t)", "Truck (9-16t)","Truck (>14t)"), vehicle_type := "Truck (18t)"]
+    non_energy_cost[vehicle_type %in% c("Truck (>15t)", "Truck (3.5-16t)", "Truck (16-32t)"), vehicle_type := "Truck (26t)"]
+    non_energy_cost[vehicle_type %in% c("Truck (>32t)"), vehicle_type := "Truck (40t)"]
+    non_energy_cost=non_energy_cost[,.(value = mean(value)), by = c("year","region","sector", "subsector_L3", "subsector_L2", "subsector_L1", "vehicle_type", "technology", "type", "price_component")]
 
-    ## add load_factor for Hybrid Electric
-    load_factor = rbind(load_factor, load_factor[technology == "Hybrid Liquids"][, technology := "Hybrid Electric"])
-
-
+    ## add load_factor for Hybrid Electric, trucks and buses FCEV and electric, domestic aviation hydrogen
+    load_factor = rbind(load_factor, load_factor[technology == "BEV"][, technology := "Hybrid Electric"])
+    load_factor = rbind(load_factor, load_factor[technology == "Liquids" & vehicle_type %in% c("Bus_tmp_vehicletype")][, technology := "Electric"])
+    load_factor = rbind(load_factor, load_factor[technology == "Liquids" & vehicle_type %in% c("Bus_tmp_vehicletype")][, technology := "FCEV"])
+    load_factor = rbind(load_factor, load_factor[technology == "Liquids" & vehicle_type %in% c("Truck (0-3.5t)","Truck (7.5t)","Truck (1-6t)","Truck (18t)", "Truck (26t)", "Truck (40t)")][, technology := "Electric"])
+    load_factor = rbind(load_factor, load_factor[technology == "Liquids" & vehicle_type %in% c("Truck (0-3.5t)","Truck (7.5t)","Truck (1-6t)","Truck (18t)", "Truck (26t)", "Truck (40t)")][, technology := "FCEV"])
+    load_factor = rbind(load_factor, load_factor[technology == "Liquids" & vehicle_type %in% "Domestic Aviation_tmp_vehicletype"][, technology := "Hydrogen"])
     non_energy_cost=merge(non_energy_cost,load_factor,all = FALSE, by=c("technology","region","year","vehicle_type","subsector_L1","subsector_L2","subsector_L3","sector") )
 
     non_energy_cost=non_energy_cost[,non_fuel_price:=value/loadFactor][,-"loadFactor"]
@@ -370,6 +434,7 @@ lvl0_loadUCD <- function(GCAM_data, EDGE_scenario, REMIND_scenario, GCAM2ISO_MAP
     tmp3=copy(non_energy_cost[region=="EU-15" & vehicle_type=="Mini Car",])[,region:="European Free Trade Association"]
 
     non_energy_cost=rbindlist(list(tmp1,tmp2,tmp3,non_energy_cost))
+
 
     ## create 2 separate dts, one with the total non fuel price the other with all it's components (for reporting purposes)
 
@@ -419,7 +484,7 @@ lvl0_loadUCD <- function(GCAM_data, EDGE_scenario, REMIND_scenario, GCAM2ISO_MAP
 
     annual_mileage[, c("UCD_technology", "variable", "UCD_sector"):=NULL] ##delete the column that stands for "all" technology
     annual_mileage[, ID := "id"]
-    techs = data.table(technology = c("BEV", "Liquids", "Hybrid Liquids", "NG", "FCEV", "Hybrid Electric"))[, ID := "id"]
+    techs = data.table(technology = c("BEV", "Liquids", "NG", "FCEV", "Hybrid Electric"))[, ID := "id"]
     annual_mileage = merge(annual_mileage, techs, by = "ID", allow.cartesian = TRUE)
     annual_mileage[, ID := NULL]
     annual_mileage=merge(annual_mileage,logit_category,all=FALSE,by=c("vehicle_type","technology"))[,-"univocal_name"]
