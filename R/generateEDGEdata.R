@@ -448,7 +448,7 @@ generateEDGEdata <- function(input_folder, output_folder,
                                    EDGE2teESmap = EDGE2teESmap,
                                    REMINDtall = REMINDtall,
                                    REMIND_scenario = REMIND_scenario)
-
+  write_xlsx(demand_traj, "C:/Users/franz/Documents/R/Github/EDGE-T - Aviation/Export Data/test.xlsx")
 
   print("-- preparing complex module-friendly output files")
   ## final value: in billionspkm or billions tkm and EJ; shares are in [-]

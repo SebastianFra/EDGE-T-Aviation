@@ -183,6 +183,10 @@ lvl2_demandReg <- function(tech_output, price_baseline, GDP_POP, REMIND_scenario
   price_el_int_aviation_L <- price_el[var == "income_elasticity_pass_lo_L"]
   price_el_int_aviation_B <- price_el[var == "income_elasticity_pass_lo_B"]
   #get RPK/CAP
+'  RPKTest=fread(system.file("extdata", "RPK-CAP-BL.csv", package = "edgeTransport"))
+  RPKB<-merge(RPKTest[,c(1,2,4)], gdp_pop[,c(1,2,4)], by=c("region","year"))
+  RPKB <- transform(RPKB, RPKCAP = RPKCAP_B*1000000  / POP_val)
+  write_xlsx(RPKB, "C:/Users/franz/Documents/R/Github/EDGE-T - Aviation/Export Data/RPKB.xlsx")'
   RPK_cap_baseline_L=fread(system.file("extdata", "RPK-CAP-L.csv", package = "edgeTransport"))
   RPK_cap_baseline_B=fread(system.file("extdata", "RPK-CAP-B.csv", package = "edgeTransport"))
   price_el_int_aviation_L_RPK = merge( price_el_int_aviation_L, RPK_cap_baseline_L[,c(1,2,5)], by = c("region","year"),all.x = TRUE)
@@ -191,7 +195,6 @@ lvl2_demandReg <- function(tech_output, price_baseline, GDP_POP, REMIND_scenario
   price_el_int_aviation_L_RPK<-transform(price_el_int_aviation_L_RPK, decay_rate= 1)
   price_el_int_aviation_L_RPK_adj<-na.omit(price_el_int_aviation_L_RPK)
   price_el_int_aviation_L_RPK_adj<- price_el_int_aviation_L_RPK_adj[,c(1,2,12)]
-  browser()
   price_el_int_aviation_L_RPK_adj=approx_dt(dt = price_el_int_aviation_L_RPK_adj, ## database to interpolate
                      xdata = seq(1965,2150,5), ## time steps on which to interpolate
                      ycol = "RPKCAP", ## column containing the data to interpolate
@@ -208,7 +211,7 @@ lvl2_demandReg <- function(tech_output, price_baseline, GDP_POP, REMIND_scenario
                                             extrapolate = T) ## extrapolate? i.e. min(xdata)<min(unique(dat$year))|max(xdata)>max(unique(dat$year))
   price_el_int_aviation_L_RPK<-merge(price_el_int_aviation_L_RPK[,c(1:11,13)], price_el_int_aviation_L_RPK_adj, by = c("region","year"),all.x = TRUE)
   price_el_int_aviation_B_RPK<-merge(price_el_int_aviation_B_RPK[,c(1:11,13)], price_el_int_aviation_B_RPK_adj, by = c("region","year"),all.x = TRUE)
-  #Leisure Loop
+   #Leisure Loop
   for (j in unique(price_el_int_aviation_L_RPK$region)) {
     for (i in unique(price_el_int_aviation_L_RPK$year[price_el_int_aviation_L_RPK$region == j])) { 
       if (price_el_int_aviation_L_RPK$RPKCAP[price_el_int_aviation_L_RPK$region == j & price_el_int_aviation_L_RPK$year == i] > decay_treshold_L) { 
@@ -306,9 +309,9 @@ lvl2_demandReg <- function(tech_output, price_baseline, GDP_POP, REMIND_scenario
   demand_tot_sector=tech_output[, .(demand_tot=sum(tech_output)), by=c("region", "year", "sector")]
   #calculate 2020 demand for aviation industry based on ICCT Data
   demand_tot_sector_avi= demand_tot_sector
-  demand_tot_sector_avi<- demand_tot_sector_avi %>% filter(sector == "trn_aviation_intl")
-  ICCT_data <- ICCT_data %>% rename(region = RegionCode)
-  ICCT_data <- ICCT_data %>% rename(demand_tot = value)
+  demand_tot_sector_avi<- demand_tot_sector_avi[demand_tot_sector_avi$sector %like% "trn_aviation_intl"]
+  setnames(ICCT_data,"RegionCode","region")
+  setnames(ICCT_data,"value","demand_tot")
   demand_tot_sector_avi <- rbind(demand_tot_sector_avi,ICCT_data)
   ## interpolate
   demand_tot_sector_avi=approx_dt(dt = demand_tot_sector_avi, ## database to interpolate
@@ -458,7 +461,7 @@ lvl2_demandReg <- function(tech_output, price_baseline, GDP_POP, REMIND_scenario
       }
   }else{}
   D_star[,trn_aviation_intl:= trn_aviation_intl_L + trn_aviation_intl_B, by = c("region", "year")]
-  D_star_av = D_star[c("region", "year", "trn_aviation_intl_L", "trn_aviation_intl_B")]
+  D_star_av = D_star[,c("region", "year", "trn_aviation_intl_L", "trn_aviation_intl_B")]
   D_star<- D_star[, c("trn_aviation_intl_L", "trn_aviation_intl_B"):= NULL] 
   
   D_star = melt(D_star, id.vars = c("region", "year"),
