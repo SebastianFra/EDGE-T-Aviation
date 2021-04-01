@@ -52,7 +52,7 @@ generateEDGEdata <- function(input_folder, output_folder,
              seq(2070, 2110, by = 10),
              2130, 2150)
   ## load mappings
-  REMIND2ISO_MAPPING = fread(system.file("extdata", "regionmappingH12.csv", package = "edgeTransport"))[, .(iso = CountryCode,region = RegionCode)]
+  REMIND2ISO_MAPPING = fread(system.file("extdata", "regionmapping_21_EU11.csv", package = "edgeTransport"))[, .(iso = CountryCode,region = RegionCode)]
   EDGEscenarios = fread(system.file("extdata", "EDGEscenario_description.csv", package = "edgeTransport"))
   GCAM2ISO_MAPPING = fread(system.file("extdata", "iso_GCAM.csv", package = "edgeTransport"))
   EDGE2teESmap = fread(system.file("extdata", "mapping_EDGE_REMIND_transport_categories.csv", package = "edgeTransport"))
@@ -123,6 +123,9 @@ generateEDGEdata <- function(input_folder, output_folder,
   GCAM_data <- lvl0_GCAMraw(input_folder)
 
   ##function that loads PSI energy intensity for Europe (all LDVs) and for other regions (only alternative vehicles LDVs) and merges them with GCAM intensities. Final values: MJ/km (pkm and tkm)
+
+
+  ## for alternative trucks: all regions (from PSI)
   print("-- merge PSI energy intensity data")
   intensity_PSI_GCAM_data <- lvl0_mergePSIintensity(GCAM_data, input_folder, enhancedtech = enhancedtech, techswitch = techswitch)
   GCAM_data$conv_pkm_mj = intensity_PSI_GCAM_data
@@ -233,7 +236,7 @@ generateEDGEdata <- function(input_folder, output_folder,
 
   print("-- Merge non-fuel prices with REMIND fuel prices")
   REMIND_prices <- merge_prices(
-    gdx = file.path(input_folder, "REMIND/fulldata.gdx"),
+    gdx = file.path(input_folder, "REMIND/fulldata_EU.gdx"),
     REMINDmapping = REMIND2ISO_MAPPING,
     REMINDyears = years,
     intensity_data = IEAbal_comparison$merged_intensity,
@@ -286,6 +289,7 @@ generateEDGEdata <- function(input_folder, output_folder,
                           smartlifestyle = smartlifestyle,
                           techswitch = techswitch)
 
+
   if(saveRDS)
     saveRDS(prefs, file = level1path("prefs.RDS"))
 
@@ -293,12 +297,6 @@ generateEDGEdata <- function(input_folder, output_folder,
   IntAv_Prep <- IntAvPreparation(tech_output_adj =  alldata$demkm,
                            input_folder= input_folder,
                            GDP_country = GDP_country)
-  
-'  print("-- prepare domestic aviation specific data")
-  DomAv_Prep <- DomAvPreparation(tech_output_adj =  GCAM_data$tech_output_adj,
-                              input_folder= input_folder,
-                              GDP_country = GDP_country)'
-  
                            
   #################################################
   ## LVL 2 scripts
@@ -344,8 +342,18 @@ generateEDGEdata <- function(input_folder, output_folder,
                               smartlifestyle = smartlifestyle,
                               ICCT_data =IntAv_Prep)
 
-    if(saveRDS)
-      saveRDS(dem_regr, file = level2path("demand_regression.RDS"))
+    if(saveRDS){
+      saveRDS(dem_regr[["D_star"]], file = level2path("demand_regression.RDS"))
+      saveRDS(dem_regr[["D_star_av"]], file = level2path("demand_regression_aviation.RDS"))
+    }
+
+    ## calculate vintages (new shares, prices, intensity)
+    prices$base=prices$base[,c("region", "technology", "year", "vehicle_type", "subsector_L1", "subsector_L2", "subsector_L3", "sector", "non_fuel_price", "tot_price", "fuel_price_pkm",  "tot_VOT_price", "sector_fuel")]
+    vintages = calcVint(shares = shares,
+                        totdem_regr = dem_regr,
+                        prices = prices,
+                        mj_km_data = mj_km_data,
+                        years = years)
 
     ## calculate vintages (new shares, prices, intensity)
     prices$base=prices$base[,c("region", "technology", "year", "vehicle_type", "subsector_L1", "subsector_L2", "subsector_L3", "sector", "non_fuel_price", "tot_price", "fuel_price_pkm",  "tot_VOT_price", "sector_fuel")]
@@ -359,7 +367,6 @@ generateEDGEdata <- function(input_folder, output_folder,
     shares$FV_shares = vintages[["shares"]]$FV_shares
     prices = vintages[["prices"]]
     mj_km_data = vintages[["mj_km_data"]]
-
 
     if(saveRDS)
       saveRDS(vintages, file = level2path("vintages.RDS"))
@@ -447,7 +454,6 @@ generateEDGEdata <- function(input_folder, output_folder,
                                    REMINDtall = REMINDtall,
                                    REMIND_scenario = REMIND_scenario)
 
-  write.xlsx(demand_traj, "C:/Users/franz/Documents/R/Github/EDGE-T - Aviation/Data/demand.xlsx")
 
   print("-- preparing complex module-friendly output files")
   ## final value: in billionspkm or billions tkm and EJ; shares are in [-]

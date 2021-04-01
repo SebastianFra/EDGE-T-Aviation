@@ -13,7 +13,9 @@
 #' @importFrom data.table shift frank
 
 
+
 lvl2_demandReg <- function(tech_output, price_baseline, GDP_POP, REMIND_scenario, smartlifestyle,ICCT_data){
+
   rich <- var <- eps <- GDP_cap <- region <- eps1 <- eps2 <- GDP_val <- POP_val <- NULL
   index_GDP <- income_elasticity_freight_sm <- income_elasticity_freight_lo <- index_GDPcap <- NULL
   income_elasticity_pass_sm <- income_elasticity_pass_lo <- price_elasticity_pass_lo <- sector <- NULL
@@ -24,6 +26,7 @@ lvl2_demandReg <- function(tech_output, price_baseline, GDP_POP, REMIND_scenario
   D_star_p_lo <- D_star_f_lo <- D_star_f_sm <- value <- variable <- vrich <- vpoor <-NULL
   ## conversion rate 2005->1990 USD
   CONV_2005USD_1990USD = 0.67
+
   #PARAMETERS FOR ELASTICITY
   #RPK Treshold & Decay
   if (REMIND_scenario == "SSP1") {
@@ -88,9 +91,6 @@ lvl2_demandReg <- function(tech_output, price_baseline, GDP_POP, REMIND_scenario
     GDP_treshold_B= 55000
   }else{}
   
-  high_IE = 1.65
-  medium_IE= 1.546
-  low_IE = 1.0
   ## Create a dt with GDP, POP and GDP_cap with EDGE regions
   gdp_pop = copy(GDP_POP)
   setnames(gdp_pop, old = "weight", new = "GDP_val")
@@ -134,6 +134,7 @@ lvl2_demandReg <- function(tech_output, price_baseline, GDP_POP, REMIND_scenario
   tmp[, vpoor := ifelse(var == "price_elasticity_pass_lo_B", -0.7, vpoor)]
   tmp[, norm := ifelse(var == "income_elasticity_pass_lo_B", 1.5, norm)]
   tmp[, norm := ifelse(var == "price_elasticity_pass_lo_B", -1, norm)]
+
   ## freight sm
   tmp[, vrich := ifelse(var == "income_elasticity_freight_sm", 0.1875, vrich)]
   tmp[, vrich := ifelse(var == "price_elasticity_freight_sm", -0.1875, vrich)]
@@ -171,6 +172,7 @@ lvl2_demandReg <- function(tech_output, price_baseline, GDP_POP, REMIND_scenario
   price_el[region %in% c("IND") & var %in% c("income_elasticity_pass_sm"), eps := 0.5]
   price_el[region %in% c("SSA", "CHA") & var %in% c("income_elasticity_pass_sm"), eps := 0.3]
   price_el[region %in% c("EUR", "NEU", "USA", "CAZ", "JPN") & var %in% c("income_elasticity_pass_sm"), eps := 0.1]
+
 
   if (smartlifestyle) {
     price_el[region =="REF" & var %in% c("income_elasticity_pass_lo_L","income_elasticity_pass_lo_B", "income_elasticity_pass_sm"), eps := 0]
@@ -261,7 +263,6 @@ lvl2_demandReg <- function(tech_output, price_baseline, GDP_POP, REMIND_scenario
   price_el[, c("income_elasticity_pass_lo_L.x","income_elasticity_pass_lo_B.x"):= NULL]
   setnames(price_el, "income_elasticity_pass_lo_L.y", "income_elasticity_pass_lo_L")
   setnames(price_el, "income_elasticity_pass_lo_B.y", "income_elasticity_pass_lo_B")
-
   #calculate growth rates
   gdp_pop[,`:=`(index_GDP=GDP_val/shift(GDP_val), index_GDPcap=GDP_cap/shift(GDP_cap), index_POP=POP_val/shift(POP_val)), by=c("region")]
   ## merge GDP_POP and price elasticity
@@ -274,6 +275,7 @@ lvl2_demandReg <- function(tech_output, price_baseline, GDP_POP, REMIND_scenario
                 index_GDPcap_p_lo_L=index_GDPcap^income_elasticity_pass_lo_L,
                 index_GDPcap_p_lo_B=index_GDPcap^income_elasticity_pass_lo_B)]
   gdp_pop[,c("income_elasticity_freight_sm", "income_elasticity_freight_lo", "income_elasticity_pass_sm", "income_elasticity_pass_lo_L","income_elasticity_pass_lo_B") := NULL]
+
 
   #order the prices according to the year, within the sector
   price_baseline=price_baseline[order(-frank(sector), year)]
@@ -306,6 +308,7 @@ lvl2_demandReg <- function(tech_output, price_baseline, GDP_POP, REMIND_scenario
                year)]
   #calculate demand at a sector level
   demand_tot_sector=tech_output[, .(demand_tot=sum(tech_output)), by=c("region", "year", "sector")]
+
   #calculate 2020 demand for aviation industry based on ICCT Data
   demand_tot_sector_avi= demand_tot_sector
   demand_tot_sector_avi<- demand_tot_sector_avi %>% filter(sector == "trn_aviation_intl")
@@ -332,6 +335,7 @@ lvl2_demandReg <- function(tech_output, price_baseline, GDP_POP, REMIND_scenario
   D_star_avi <- transform( D_star_avi, trn_aviation_intl_L = trn_aviation_intl * 0.625)
   D_star_avi <- transform( D_star_avi, trn_aviation_intl_B = trn_aviation_intl * 0.375)
 
+
   #for loop that calculates the value of the following time step of demand based on the growth of the indexes
   i=NULL
   for (i in seq(1,length(unique(D_star$year)),1)) {
@@ -341,7 +345,6 @@ lvl2_demandReg <- function(tech_output, price_baseline, GDP_POP, REMIND_scenario
     D_star[is.na(trn_pass) & !is.na(tmp),trn_pass:=tmp]
     D_star[year>=2010,tmp:=shift(trn_shipping_intl)*D_star_f_lo,by=c("region")]
     D_star[is.na(trn_shipping_intl) & !is.na(tmp),trn_shipping_intl:=tmp]
-
     i=i+1
   }
   
@@ -369,6 +372,7 @@ lvl2_demandReg <- function(tech_output, price_baseline, GDP_POP, REMIND_scenario
   }
 
   ## select only the columns that contains the demand
+
   D_star[, c("tmp", "D_star_f_sm", "D_star_p_sm", "D_star_f_lo", "D_star_p_lo_L","D_star_p_lo_B","trn_aviation_intl_B","trn_aviation_intl_L","trn_aviation_intl") := NULL]
   D_star_avi[, c( "tmp", "D_star_f_sm", "D_star_p_sm", "D_star_f_lo", "D_star_p_lo_L","D_star_p_lo_B","trn_freight","trn_pass","trn_shipping_intl","trn_aviation_intl") := NULL]
   D_star<-merge(D_star,D_star_avi, by=c("region","year"), all.x = TRUE)
@@ -460,8 +464,11 @@ lvl2_demandReg <- function(tech_output, price_baseline, GDP_POP, REMIND_scenario
       }
   }else{}
   D_star[,trn_aviation_intl:= trn_aviation_intl_L + trn_aviation_intl_B, by = c("region", "year")]
+  D_star_av = D_star[,c("region", "year", "trn_aviation_intl_L", "trn_aviation_intl_B")]
+  D_star<- D_star[, c("trn_aviation_intl_L", "trn_aviation_intl_B"):= NULL] 
+  
   D_star = melt(D_star, id.vars = c("region", "year"),
-                  measure.vars = c("trn_aviation_intl_L","trn_aviation_intl_B", "trn_freight", "trn_pass", "trn_shipping_intl", "trn_aviation_intl"))
+                  measure.vars = c("trn_freight", "trn_pass", "trn_shipping_intl", "trn_aviation_intl"))
   D_star = D_star[,.(region, year, demand = value, sector = variable)]
 
   return(D_star)

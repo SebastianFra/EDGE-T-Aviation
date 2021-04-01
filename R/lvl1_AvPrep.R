@@ -16,8 +16,8 @@ IntAvPreparation <-function(tech_output_adj,input_folder,GDP_country,ICCT_dir="I
   GDP_POP =fread(file.path(input_folder,ICCT_dir, "GDP_POP.csv"))
   ICCT2GCAM =fread(file.path(input_folder,ICCT_dir, "ICCT2GCAM.csv"))
   GDP_country = GDP_country
-  ICCT_data <- ICCT_data %>% rename(value = `international RPKs (billions)`)
-  ICCT_data <- ICCT_data %>% rename(region = name)
+  setnames(ICCT_data,"international RPKs (billions)", "value")
+  setnames(ICCT_data,"name", "region")
   ICCT_data <-ICCT_data[,c(6,1)]
   GDP_country=GDP_country[year==2020]
   ICCT_data[, year := 2020]
@@ -26,13 +26,12 @@ IntAvPreparation <-function(tech_output_adj,input_folder,GDP_country,ICCT_dir="I
                                datacols = "year",
                                weights=GDP_country)
   
-  iso_mapping =fread(system.file("extdata", "regionmappingH12.csv", package = "edgeTransport"))
-  iso_mapping <- iso_mapping %>% rename(iso = CountryCode)
+  iso_mapping =fread(system.file("extdata", "regionmapping_21_EU11.csv", package = "edgeTransport"))
+  setnames(iso_mapping,"CountryCode", "iso")
   ICCT_data<-merge(ICCT_data, iso_mapping, by = c("iso"), all.x=TRUE)
   ICCT_data <- transform(ICCT_data, year = 2020)
   ICCT_data <-ICCT_data[,c(3,5)]
-  ICCT_data <-ICCT_data %>% group_by(RegionCode)
-  ICCT_data = summarise(ICCT_data, value = sum(value))
+  ICCT_data = ICCT_data[, .(value = sum(value)), by = c("RegionCode")]
   ICCT_data <- transform(ICCT_data, sector = "trn_aviation_intl")
   ICCT_data <- transform(ICCT_data, year = 2020)
   return(ICCT_data)
