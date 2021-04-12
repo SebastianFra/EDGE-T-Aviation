@@ -11,7 +11,7 @@
 #' @param saveRDS optional saving of intermediate RDS files
 #'
 #' @return generated EDGE-transport input data
-#' @author Alois Dirnaichner, Marianna Rottoli
+#' @author Alois Dirnaichner, Marianna Rottoli, Sebastian Franz
 #' @import data.table
 #' @importFrom edgeTrpLib merge_prices calculate_logit_inconv_endog calcVint shares_intensity_and_demand calculate_capCosts prepare4REMIND calc_num_vehicles_stations
 #' @importFrom rmarkdown render
@@ -19,7 +19,7 @@
 
 
 generateEDGEdata <- function(input_folder, output_folder,
-                             EDGE_scenario, REMIND_scenario="SSP2",
+                             EDGE_scenario, REMIND_scenario="SSP2", COVID_scenario=TRUE,
                              IEAbal=NULL, GDP_country=NULL, POP_country=NULL,
                              saveRDS=FALSE){
 
@@ -123,9 +123,6 @@ generateEDGEdata <- function(input_folder, output_folder,
   GCAM_data <- lvl0_GCAMraw(input_folder)
 
   ##function that loads PSI energy intensity for Europe (all LDVs) and for other regions (only alternative vehicles LDVs) and merges them with GCAM intensities. Final values: MJ/km (pkm and tkm)
-
-
-  ## for alternative trucks: all regions (from PSI)
   print("-- merge PSI energy intensity data")
   intensity_PSI_GCAM_data <- lvl0_mergePSIintensity(GCAM_data, input_folder, enhancedtech = enhancedtech, techswitch = techswitch)
   GCAM_data$conv_pkm_mj = intensity_PSI_GCAM_data
@@ -289,7 +286,6 @@ generateEDGEdata <- function(input_folder, output_folder,
                           smartlifestyle = smartlifestyle,
                           techswitch = techswitch)
 
-
   if(saveRDS)
     saveRDS(prefs, file = level1path("prefs.RDS"))
 
@@ -297,13 +293,20 @@ generateEDGEdata <- function(input_folder, output_folder,
   IntAv_Prep <- IntAvPreparation(tech_output_adj =  alldata$demkm,
                            input_folder= input_folder,
                            GDP_country = GDP_country)
+  
+ print("-- prepare domestic aviation specific data")
+   DomAv_Prep <- DomAvPreparation(tech_output_adj =  alldata$demkm,
+                                input_folder= input_folder,
+                                GDP_country = GDP_country)
+  
                            
   #################################################
   ## LVL 2 scripts
   #################################################
   print("-- Start of level 2 scripts")
   ## LOGIT calculation
-  print("-- LOGIT calculation: three iterations to provide endogenous update of inconvenience costs")
+  print("-- LOGIT calculation")
+  REMIND2ISO_MAPPING_adj = fread(system.file("extdata", "regionmappingH12.csv", package = "edgeTransport"))[, .(iso = CountryCode,region = RegionCode)]
   ## filter out prices and intensities that are related to not used vehicles-technologies in a certain region
   REMIND_prices = merge(REMIND_prices, unique(prefs$FV_final_pref[, c("region", "vehicle_type")]), by = c("region", "vehicle_type"), all.y = TRUE)
   IEAbal_comparison$merged_intensity = merge(IEAbal_comparison$merged_intensity, unique(prefs$FV_final_pref[!(vehicle_type %in% c("Cycle_tmp_vehicletype", "Walk_tmp_vehicletype")) , c("region", "vehicle_type")]), by = c("region", "vehicle_type"), all.y = TRUE)
@@ -311,7 +314,6 @@ generateEDGEdata <- function(input_folder, output_folder,
 
   totveh=NULL
   ## multiple iterations of the logit calculation - set to 3
-  for (i in seq(1,3,1)) {
     logit_data <- calculate_logit_inconv_endog(
       prices = REMIND_prices,
       vot_data = iso_data$vot,
@@ -324,7 +326,7 @@ generateEDGEdata <- function(input_folder, output_folder,
     if(saveRDS){
       saveRDS(logit_data[["share_list"]], file = level1path("share_newvehicles.RDS"))
       saveRDS(logit_data[["pref_data"]], file = level1path("pref_data.RDS"))
-    }
+}
 
     if(saveRDS)
       saveRDS(logit_data, file = level2path("logit_data.RDS"))
@@ -340,152 +342,14 @@ generateEDGEdata <- function(input_folder, output_folder,
                               GDP_POP = GDP_POP,
                               REMIND_scenario = REMIND_scenario,
                               smartlifestyle = smartlifestyle,
-                              ICCT_data =IntAv_Prep)
-
-    if(saveRDS){
-      saveRDS(dem_regr[["D_star"]], file = level2path("demand_regression.RDS"))
-      saveRDS(dem_regr[["D_star_av"]], file = level2path("demand_regression_aviation.RDS"))
-    }
-
-    ## calculate vintages (new shares, prices, intensity)
-    prices$base=prices$base[,c("region", "technology", "year", "vehicle_type", "subsector_L1", "subsector_L2", "subsector_L3", "sector", "non_fuel_price", "tot_price", "fuel_price_pkm",  "tot_VOT_price", "sector_fuel")]
-    vintages = calcVint(shares = shares,
-                        totdem_regr = dem_regr,
-                        prices = prices,
-                        mj_km_data = mj_km_data,
-                        years = years)
-
-    ## calculate vintages (new shares, prices, intensity)
-    prices$base=prices$base[,c("region", "technology", "year", "vehicle_type", "subsector_L1", "subsector_L2", "subsector_L3", "sector", "non_fuel_price", "tot_price", "fuel_price_pkm",  "tot_VOT_price", "sector_fuel")]
-    vintages = calcVint(shares = shares,
-                        totdem_regr = dem_regr,
-                        prices = prices,
-                        mj_km_data = mj_km_data,
-                        years = years)
-
-
-    shares$FV_shares = vintages[["shares"]]$FV_shares
-    prices = vintages[["prices"]]
-    mj_km_data = vintages[["mj_km_data"]]
+                              ICCT_data_I = IntAv_Prep,
+                              ICCT_data_D = DomAv_Prep,
+                              GDP_country = GDP_country,
+                              REMIND2ISO_MAPPING_adj = REMIND2ISO_MAPPING_adj,
+                              REMIND2ISO_MAPPING = REMIND2ISO_MAPPING,
+                              COVID_scenario= COVID_scenario)
 
     if(saveRDS)
-      saveRDS(vintages, file = level2path("vintages.RDS"))
-
-    print("-- aggregating shares, intensity and demand along REMIND tech dimensions")
-    shares_intensity_demand <- shares_intensity_and_demand(
-      logit_shares=shares,
-      MJ_km_base=mj_km_data,
-      EDGE2CESmap=EDGE2CESmap,
-      REMINDyears=years,
-      demand_input = dem_regr)
-
-    demByTech <- shares_intensity_demand[["demand"]] ##in [-]
-    intensity_remind <- shares_intensity_demand[["demandI"]] ##in million pkm/EJ
-    norm_demand <- shares_intensity_demand[["demandF_plot_pkm"]] ## total demand normalized to 1; if opt$reporting, in million km
-
-    num_veh_stations = calc_num_vehicles_stations(
-      norm_dem = norm_demand[
-        subsector_L1 == "trn_pass_road_LDV_4W", ## only 4wheelers
-        c("region", "year", "sector", "vehicle_type", "technology", "demand_F") ],
-      ES_demand_all = dem_regr,
-      intensity = intensity_remind,
-      techswitch = techswitch,
-      loadFactor = unique(alldata$LF[,c("region", "year", "vehicle_type", "loadFactor")]),
-      EDGE2teESmap = EDGE2teESmap,
-      rep = TRUE)
-
-    totveh = num_veh_stations$alltechdem
-
-    i = i+1
-  }
-
-
-
-  print("-- Calculating budget coefficients")
-  budget <- calculate_capCosts(
-    base_price=prices$base,
-    Fdemand_ES = shares_intensity_demand$demandF_plot_EJ,
-    stations = num_veh_stations$stations,
-    EDGE2CESmap = EDGE2CESmap,
-    EDGE2teESmap = EDGE2teESmap,
-    REMINDyears = years,
-    scenario = scenario)
-
-  ## full REMIND time range for inputs
-  REMINDtall <- c(seq(1900,1985,5),
-                  seq(1990, 2060, by = 5),
-                  seq(2070, 2110, by = 10),
-                  2130, 2150)
-
-  if (saveRDS) {
-    saveRDS(vintages[["vintcomp"]], file = level2path("vintcomp.RDS"))
-    saveRDS(vintages[["newcomp"]], file = level2path("newcomp.RDS"))
-    saveRDS(shares, file = level2path("shares.RDS"))
-    saveRDS(logit_data$mj_km_data, file = level2path("mj_km_data.RDS"))
-    saveRDS(shares_intensity_demand$demandF_plot_EJ,
-            file=level2path("demandF_plot_EJ.RDS"))
-    saveRDS(shares_intensity_demand$demandF_plot_pkm,
-            level2path("demandF_plot_pkm.RDS"))
-    saveRDS(logit_data$pref_data, file = level2path("pref_output.RDS"))
-    saveRDS(alldata$LF, file = level2path("loadFactor.RDS"))
-    saveRDS(POP, file = level2path("POP.RDS"))
-    saveRDS(IEAbal_comparison$IEA_dt2plot, file = level2path("IEAcomp.RDS"))
-    md_template = level2path("report.Rmd")
-    ## ship and run the file in the output folder
-    file.copy(system.file("Rmd", "report.Rmd", package = "edgeTransport"),
-              md_template, overwrite = T)
-    render(md_template, output_format="pdf_document")
-  }
-
-
-  ## prepare the entries to be saved in the gdx files: intensity, shares, non_fuel_price. Final entries: intensity in [trillionkm/Twa], capcost in [trillion2005USD/trillionpkm], shares in [-]
-  print("-- final preparation of input files")
-  finalInputs <- prepare4REMIND(
-    demByTech = demByTech,
-    intensity = intensity_remind,
-    capCost = budget,
-    EDGE2teESmap = EDGE2teESmap,
-    REMINDtall = REMINDtall)
-
-
-  ## calculate absolute values of demand. Final entry: demand in [trillionpkm]
-  demand_traj <- lvl2_REMINDdemand(regrdemand = dem_regr,
-                                   EDGE2teESmap = EDGE2teESmap,
-                                   REMINDtall = REMINDtall,
-                                   REMIND_scenario = REMIND_scenario)
-
-
-  print("-- preparing complex module-friendly output files")
-  ## final value: in billionspkm or billions tkm and EJ; shares are in [-]
-  complexValues <- lvl2_reportingEntries(ESdem = shares_intensity_demand$demandF_plot_pkm,
-                                         FEdem = shares_intensity_demand$demandF_plot_EJ)
-
-  print("-- generating CSV files to be transferred to mmremind")
-  ## only the combinations (region, vehicle) present in the mix have to be included in costs
-  NEC_data = merge(iso_data$UCD_results$nec_cost,
-                   unique(calibration_output$list_SW$VS1_final_SW[,c("region", "vehicle_type")]),
-                   by =c("region", "vehicle_type"))
-  capcost4W = merge(iso_data$UCD_results$capcost4W,
-                    unique(calibration_output$list_SW$VS1_final_SW[,c("region", "vehicle_type")]),
-                    by =c("region", "vehicle_type"))
-
-
-  lvl2_createCSV_inconv(
-    logit_params = VOT_lambdas$logit_output,
-    pref_data = logit_data$pref_data,
-    vot_data = iso_data$vot,
-    int_dat = IEAbal_comparison$merged_intensity,
-    NEC_data = NEC_data,
-    capcost4W = capcost4W,
-    demByTech = finalInputs$demByTech,
-    intensity = finalInputs$intensity,
-    capCost = finalInputs$capCost,
-    price_nonmot = iso_data$price_nonmot,
-    complexValues = complexValues,
-    loadFactor = alldata$LF,
-    demISO = alldata$demISO,
-    REMIND_scenario = REMIND_scenario,
-    EDGE_scenario = EDGE_scenario,
-    level2path = level2path)
-
+      saveRDS(dem_regr, file = level2path("demand_regression.RDS"))
+    write_xlsx(dem_regr, "C:/Users/franz/Documents/R/Master-Thesis/EDGE-T/Export Data/demand.xlsx")
 }
