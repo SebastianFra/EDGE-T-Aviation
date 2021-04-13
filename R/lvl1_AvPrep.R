@@ -34,6 +34,8 @@ IntAvPreparation <-function(tech_output_adj,input_folder,GDP_country,ICCT_dir="I
   ICCT_data = ICCT_data[, .(value = sum(value)), by = c("RegionCode")]
   ICCT_data <- transform(ICCT_data, sector = "trn_aviation_intl")
   ICCT_data <- transform(ICCT_data, year = 2020)
+  setnames(ICCT_data,"RegionCode","region")
+  setnames(ICCT_data,"value","demand_tot")
   return(ICCT_data)
 }
 
