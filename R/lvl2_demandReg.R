@@ -4,17 +4,19 @@
 #' @param tech_output historically calibrated demand
 #' @param price_baseline baseline prices
 #' @param GDP_POP GDP per capita
+#' @param ICCT_data Historical aviation demand
 #' @param REMIND_scenario SSP scenario
 #' @param smartlifestyle switch activating sustainable lifestyles
 #' @importFrom rmndt approx_dt
 #' @return transport demand projections
-#' @author Marianna Rottoli
+#' @author Marianna Rottoli, Sebastian Franz
 #'
 #' @importFrom data.table shift frank
+#' @importFrom stats na.omit
 
 
 
-lvl2_demandReg <- function(tech_output, price_baseline, GDP_POP, REMIND_scenario, smartlifestyle,ICCT_data){
+lvl2_demandReg <- function(tech_output, price_baseline, GDP_POP, ICCT_data, REMIND_scenario, smartlifestyle){
   
   rich <- var <- eps <- GDP_cap <- region <- eps1 <- eps2 <- GDP_val <- POP_val <- NULL
   index_GDP <- income_elasticity_freight_sm <- income_elasticity_freight_lo <- index_GDPcap <- NULL
@@ -24,11 +26,15 @@ lvl2_demandReg <- function(tech_output, price_baseline, GDP_POP, REMIND_scenario
   index_price_f_sm <- index_price_f_lo <- index_GDP_f_sm <- index_GDPcap_p_lo <- index_GDP_f_lo <- NULL
   index_price_p_sm <- index_GDPcap_p_sm <- index_POP <- index_price_p_lo <- D_star_f_sm <- D_star_p_sm <- NULL
   D_star_p_lo <- D_star_f_lo <- D_star_f_sm <- value <- variable <- vrich <- vpoor <-NULL
+  income_elasticity_pass_lo_L <- income_elasticity_pass_lo_B <- price_elasticity_pass_lo_L <-price_elasticity_pass_lo_B <- NULL
+  index_price_p_lo_L <- index_price_p_lo_B <- index_GDPcap_p_lo_L <- index_GDPcap_p_lo_B <- NULL
+  trn_aviation_intl_L <- trn_aviation_intl_B <- D_star_p_lo_L <- D_star_p_lo_B <- value <- NULL
+  
   ## conversion rate 2005->1990 USD
   CONV_2005USD_1990USD = 0.67
   
-  #PARAMETERS FOR ELASTICITY
-  #RPK Treshold & Decay
+  ## PARAMETERS FOR ELASTICITY. These Parameters can be adjusted in order to reflect the specific SSP narrative correctly
+  ## RPK Treshold & Decay
   if (REMIND_scenario == "SSP1") {
     decay_DR_L=0.7
     decay_treshold_L= 1300
@@ -45,7 +51,7 @@ lvl2_demandReg <- function(tech_output, price_baseline, GDP_POP, REMIND_scenario
     decay_DR_L=0.95
     decay_treshold_L= 1600
   }else{}
-  #mutate the decayrate for Income elasticity Business
+  ## mutate the decayrate for Income elasticity Business
   if (REMIND_scenario == "SSP1") {
     decay_DR_B=0.65
     decay_treshold_B= 800
@@ -62,10 +68,10 @@ lvl2_demandReg <- function(tech_output, price_baseline, GDP_POP, REMIND_scenario
     decay_DR_B=0.85
     decay_treshold_B= 1200
   }else{}
-  #GDP Treshold
-  #Decay of Income Elasticity
-  #International
-  #Leisure
+  ## GDP Treshold
+  ## Decay of Income Elasticity
+  ## International
+  ## Leisure
   if (REMIND_scenario == "SSP1") {
     GDP_treshold_L= 50000
   }else if (REMIND_scenario == "SSP2") {
@@ -78,7 +84,7 @@ lvl2_demandReg <- function(tech_output, price_baseline, GDP_POP, REMIND_scenario
     GDP_treshold_L= 60000
   }else{}
   
-  #Business
+  ##Business
   if (REMIND_scenario == "SSP1") {
     GDP_treshold_B= 45000
   }else if (REMIND_scenario == "SSP2") {
@@ -187,7 +193,7 @@ lvl2_demandReg <- function(tech_output, price_baseline, GDP_POP, REMIND_scenario
   price_el[region %in% c("IND", "OAS", "SSA", "MEA") & var %in% c("income_elasticity_pass_lo_L","income_elasticity_pass_lo_B"), eps := 0.25]
   price_el_int_aviation_L <- price_el[var == "income_elasticity_pass_lo_L"]
   price_el_int_aviation_B <- price_el[var == "income_elasticity_pass_lo_B"]
-  #get RPK/CAP
+  ## get RPK/CAP Data from a previous baseline run
   RPK_cap_baseline_L=fread(system.file("extdata", "RPK-CAP-L.csv", package = "edgeTransport"))
   RPK_cap_baseline_B=fread(system.file("extdata", "RPK-CAP-B.csv", package = "edgeTransport"))
   price_el_int_aviation_L_RPK = merge( price_el_int_aviation_L, RPK_cap_baseline_L[,c(1,2,5)], by = c("region","year"),all.x = TRUE)
@@ -212,7 +218,7 @@ lvl2_demandReg <- function(tech_output, price_baseline, GDP_POP, REMIND_scenario
                                             extrapolate = T) ## extrapolate? i.e. min(xdata)<min(unique(dat$year))|max(xdata)>max(unique(dat$year))
   price_el_int_aviation_L_RPK<-merge(price_el_int_aviation_L_RPK[,c(1:11,13)], price_el_int_aviation_L_RPK_adj, by = c("region","year"),all.x = TRUE)
   price_el_int_aviation_B_RPK<-merge(price_el_int_aviation_B_RPK[,c(1:11,13)], price_el_int_aviation_B_RPK_adj, by = c("region","year"),all.x = TRUE)
-  #Leisure Loop
+  ## Leisure Loop to adjust the decay_rate based on RPK/Capita data
   for (j in unique(price_el_int_aviation_L_RPK$region)) {
     for (i in unique(price_el_int_aviation_L_RPK$year[price_el_int_aviation_L_RPK$region == j])) { 
       if (price_el_int_aviation_L_RPK$RPKCAP[price_el_int_aviation_L_RPK$region == j & price_el_int_aviation_L_RPK$year == i] > decay_treshold_L) { 
@@ -220,7 +226,7 @@ lvl2_demandReg <- function(tech_output, price_baseline, GDP_POP, REMIND_scenario
       }
     }
   }
-  #Business Loop
+  ## Business Loop to adjust the decay_rate based on RPK/Capita data
   for (j in unique(price_el_int_aviation_B_RPK$region)) {
     for (i in unique(price_el_int_aviation_B_RPK$year[price_el_int_aviation_B_RPK$region == j])) { 
       if (price_el_int_aviation_B_RPK$RPKCAP[price_el_int_aviation_B_RPK$region == j & price_el_int_aviation_B_RPK$year == i] > decay_treshold_B) { 
@@ -234,8 +240,7 @@ lvl2_demandReg <- function(tech_output, price_baseline, GDP_POP, REMIND_scenario
   price_el_int_aviation_L = merge(price_el_int_aviation_L, price_el_int_aviation_L_RPK, by = c("region","year"),all.x = TRUE)
   price_el_int_aviation_B_RPK<- price_el_int_aviation_B_RPK[, c(3:11,13):= NULL] 
   price_el_int_aviation_B = merge(price_el_int_aviation_B, price_el_int_aviation_B_RPK, by = c("region","year"),all.x = TRUE)
-  #International
-  #Leisure Loop
+  ## Leisure Loop to adjust the Income Elasticity based on GDP/Capita treshold and the previous calculated decay rate based on RPK/Capita treshold
   for (j in unique(price_el_int_aviation_L$region)) {
     for (i in unique(price_el_int_aviation_L$year[price_el_int_aviation_L$region == j])) { 
       if (price_el_int_aviation_L$GDP_cap[price_el_int_aviation_L$region == j & price_el_int_aviation_L$year == i] > GDP_treshold_L) { 
@@ -243,7 +248,7 @@ lvl2_demandReg <- function(tech_output, price_baseline, GDP_POP, REMIND_scenario
       }
     }
   }
-  #Business Loop
+  ## Business Loop to adjust the Income Elasticity based on GDP/Capita treshold and the previous calculated decay rate based on RPK/Capita treshold
   for (j in unique(price_el_int_aviation_B$region)) {
     for (i in unique(price_el_int_aviation_B$year[price_el_int_aviation_B$region == j])) { 
       if (price_el_int_aviation_B$GDP_cap[price_el_int_aviation_B$region == j & price_el_int_aviation_B$year == i] > GDP_treshold_B) { 
@@ -259,11 +264,11 @@ lvl2_demandReg <- function(tech_output, price_baseline, GDP_POP, REMIND_scenario
   price_el = dcast(price_el[,c("region","year","var","eps", "GDP_cap")], region + year + GDP_cap ~var, value.var = "eps")
   price_el = merge(price_el, price_el_int_aviation_L[,c(1,2,4)], by = c("region","year"),all.x = TRUE)
   price_el = merge(price_el, price_el_int_aviation_B[,c(1,2,4)], by = c("region","year"),all.x = TRUE)
-  #drop stuff
+  ## drop lines which are not needed anymore
   price_el[, c("income_elasticity_pass_lo_L.x","income_elasticity_pass_lo_B.x"):= NULL]
   setnames(price_el, "income_elasticity_pass_lo_L.y", "income_elasticity_pass_lo_L")
   setnames(price_el, "income_elasticity_pass_lo_B.y", "income_elasticity_pass_lo_B")
-  #calculate growth rates
+  ## calculate growth rates
   gdp_pop[,`:=`(index_GDP=GDP_val/shift(GDP_val), index_GDPcap=GDP_cap/shift(GDP_cap), index_POP=POP_val/shift(POP_val)), by=c("region")]
   ## merge GDP_POP and price elasticity
   gdp_pop = merge(gdp_pop, price_el[,c("region", "year", "income_elasticity_pass_lo_L", "income_elasticity_pass_lo_B", "income_elasticity_pass_sm", "income_elasticity_freight_sm", "income_elasticity_freight_lo")], by = c("region", "year"))
@@ -277,17 +282,17 @@ lvl2_demandReg <- function(tech_output, price_baseline, GDP_POP, REMIND_scenario
   gdp_pop[,c("income_elasticity_freight_sm", "income_elasticity_freight_lo", "income_elasticity_pass_sm", "income_elasticity_pass_lo_L","income_elasticity_pass_lo_B") := NULL]
   
   
-  #order the prices according to the year, within the sector
+  ## order the prices according to the year, within the sector
   price_baseline=price_baseline[order(-frank(sector), year)]
-  #calculate "index" which represent the growth of total price
+  ## calculate "index" which represent the growth of total price
   price_baseline[,index_price:=tot_price/shift(tot_price),by=c("region","sector")]
   #select only the needed columns
   price_baseline=price_baseline[, c("region","year","sector","index_price")]
-  #from long to wide format, so that the df has separate columns for all transport modes
+  ## from long to wide format, so that the df has separate columns for all transport modes
   price_baseline=dcast(price_baseline, region + year  ~ sector, value.var = "index_price", fun.aggregate = sum, margins="sector")
   ## merge with elasticities
   price_baseline = merge(price_baseline, price_el[,c("region", "year", "price_elasticity_pass_lo_L","price_elasticity_pass_lo_B", "price_elasticity_pass_sm", "price_elasticity_freight_sm", "price_elasticity_freight_lo")], by = c("region", "year"))
-  #calculate the indexes raised to the corresponding elasticities
+  ## calculate the indexes raised to the corresponding elasticities
   price_baseline[,`:=`(index_price_f_sm=trn_freight^price_elasticity_freight_sm,
                        index_price_f_lo=trn_shipping_intl^price_elasticity_freight_lo,
                        index_price_p_sm=trn_pass^price_elasticity_pass_sm,
@@ -296,9 +301,9 @@ lvl2_demandReg <- function(tech_output, price_baseline, GDP_POP, REMIND_scenario
   
   price_baseline[,c("price_elasticity_freight_sm", "price_elasticity_freight_lo", "price_elasticity_pass_sm", "price_elasticity_pass_lo_L", "price_elasticity_pass_lo_B") := NULL]
   
-  #create the D* df
+  ## create the D* df
   D_star=merge(price_baseline,gdp_pop,by = c("region","year"))
-  #calculate D* for each mode separately, and select only the useful cols
+  ## calculate D* for each mode separately, and select only the useful cols
   D_star=D_star[,.(D_star_f_sm=index_price_f_sm*index_GDP_f_sm,
                    D_star_f_lo=index_price_f_lo*index_GDP_f_lo,
                    D_star_p_sm=index_price_p_sm*index_GDPcap_p_sm*index_POP,
@@ -306,10 +311,10 @@ lvl2_demandReg <- function(tech_output, price_baseline, GDP_POP, REMIND_scenario
                    D_star_p_lo_B=index_price_p_lo_B*index_GDPcap_p_lo_B*index_POP,
                    region,
                    year)]
-  #calculate demand at a sector level
+  ## calculate demand at a sector level
   demand_tot_sector=tech_output[, .(demand_tot=sum(tech_output)), by=c("region", "year", "sector")]
   
-  #calculate 2020 demand for aviation industry based on ICCT Data
+  ## calculate 2020 demand for aviation industry based on ICCT Data
   demand_tot_sector_avi= demand_tot_sector
   demand_tot_sector_avi<- demand_tot_sector_avi[demand_tot_sector_avi$sector %like% "trn_aviation_intl"]
   demand_tot_sector_avi <- rbind(demand_tot_sector_avi,ICCT_data)
@@ -320,21 +325,21 @@ lvl2_demandReg <- function(tech_output, price_baseline, GDP_POP, REMIND_scenario
                                   xcol="year", ## x-axis of the interpolation, i.e. the years that you indeed have available
                                   idxcols=c("region", "sector"), ## equivalent of "group_by" in dplyr and "by=.(....)" in data.table
                                   extrapolate = T) ## extrapolate? i.e. min(xdata)<min(unique(dat$year))|max(xdata)>max(unique(dat$year))
-  #from long to wide format, so that the df has separate columns for all transport modes
+  ## from long to wide format, so that the df has separate columns for all transport modes
   demand_tot_sector=dcast(demand_tot_sector, region + year  ~ sector, value.var = "demand_tot", fun.aggregate = sum, margins="sector")
   demand_tot_sector_avi=dcast(demand_tot_sector_avi, region + year  ~ sector, value.var = "demand_tot", fun.aggregate = sum, margins="sector")
   
-  #merge D* and historical demand
+  ## merge D* and historical demand
   D_star_avi=merge(D_star,demand_tot_sector_avi, by = c("region","year"),all.x = TRUE)
   D_star=merge(D_star,demand_tot_sector, by = c("region","year"),all.x = TRUE)
   
   
-  #Split international aviation in business and leisure based on a survey IPSOS, 2017
+  ## Split international aviation in business and leisure based on a survey IPSOS, 2017
   D_star_avi <- transform( D_star_avi, trn_aviation_intl_L = trn_aviation_intl * 0.625)
   D_star_avi <- transform( D_star_avi, trn_aviation_intl_B = trn_aviation_intl * 0.375)
   
   
-  #for loop that calculates the value of the following time step of demand based on the growth of the indexes
+  ## for loop that calculates the value of the following time step of demand based on the growth of the indexes
   i=NULL
   for (i in seq(1,length(unique(D_star$year)),1)) {
     D_star[year>=2010,tmp:=shift(trn_freight)*D_star_f_sm,by=c("region")]
@@ -346,8 +351,8 @@ lvl2_demandReg <- function(tech_output, price_baseline, GDP_POP, REMIND_scenario
     i=i+1
   }
   
-  # international aviation loop
-  #interpolate to consistent 5-year time step
+  ## international aviation  specific loop
+  ## interpolate  the 10 years to 5 years time step to be consistent for the demand regression & effect of income elasticity
   D_star_avi=approx_dt(dt = D_star_avi, ## database to interpolate
                        xdata = seq(1990,2100,5), ## time steps on which to interpolate
                        ycol = "D_star_p_lo_L", ## column containing the data to interpolate
@@ -374,10 +379,10 @@ lvl2_demandReg <- function(tech_output, price_baseline, GDP_POP, REMIND_scenario
   D_star[, c("tmp", "D_star_f_sm", "D_star_p_sm", "D_star_f_lo", "D_star_p_lo_L","D_star_p_lo_B","trn_aviation_intl_B","trn_aviation_intl_L","trn_aviation_intl") := NULL]
   D_star_avi[, c( "tmp", "D_star_f_sm", "D_star_p_sm", "D_star_f_lo", "D_star_p_lo_L","D_star_p_lo_B","trn_freight","trn_pass","trn_shipping_intl","trn_aviation_intl") := NULL]
   D_star<-merge(D_star,D_star_avi, by=c("region","year"), all.x = TRUE)
-  #COVID ADJUSTMENT
+  ## COVID ADJUSTMENT - Totally exogenous COVID shock based on certain assumptions and actual COVID-impact data from the year 2020
   COVID_shock =fread(system.file("extdata", "COVID.csv", package = "edgeTransport"))
   D_star=merge(D_star, COVID_shock,by = c("region","year"),all.x = TRUE)
-  #International Leisure
+  ## International Leisure adjustment
   if (REMIND_scenario == "SSP1"){
     for (j in unique(D_star$region)) {
       for (i in unique(D_star$year[D_star$region == j])) { 
@@ -419,7 +424,7 @@ lvl2_demandReg <- function(tech_output, price_baseline, GDP_POP, REMIND_scenario
       }
     }
   }else{}
-  #International Business
+  ## International Business adjustment
   if (REMIND_scenario == "SSP1"){
     for (j in unique(D_star$region)) {
       for (i in unique(D_star$year[D_star$region == j])) { 

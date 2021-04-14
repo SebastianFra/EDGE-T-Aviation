@@ -11,7 +11,7 @@
 #' @param saveRDS optional saving of intermediate RDS files
 #'
 #' @return generated EDGE-transport input data
-#' @author Alois Dirnaichner, Marianna Rottoli
+#' @author Alois Dirnaichner, Marianna Rottoli, Sebastian Franz
 #' @import data.table
 #' @importFrom edgeTrpLib merge_prices calculate_logit_inconv_endog calcVint shares_intensity_and_demand calculate_capCosts prepare4REMIND calc_num_vehicles_stations
 #' @importFrom rmarkdown render
@@ -141,7 +141,12 @@ generateEDGEdata <- function(input_folder, output_folder,
   print("-- load UCD database")
   UCD_output <- lvl0_loadUCD(GCAM_data = GCAM_data, GDP_country = GDP_country, EDGE_scenario = EDGE_scenario, REMIND_scenario = REMIND_scenario, GCAM2ISO_MAPPING = GCAM2ISO_MAPPING,
                             input_folder = input_folder, years = years, enhancedtech = enhancedtech, selfmarket_taxes = selfmarket_taxes, rebates_febates = rebates_febates, techswitch = techswitch)
-
+  
+  ## function that loads historical country-specific international aviation demand [billions RPK]
+  print("-- prepare international aviation specific data")
+  IntAv_Prep <- lvl0_IntAvPreparation(input_folder= input_folder,
+                                      GDP_country = GDP_country)
+  
   ## function that integrates GCAM data. No conversion of units happening.
   print("-- correct tech output")
   correctedOutput <- lvl0_correctTechOutput(GCAM_data,
@@ -208,6 +213,7 @@ generateEDGEdata <- function(input_folder, output_folder,
   incocost <- lvl0_incocost(annual_mileage = iso_data$UCD_results$annual_mileage,
                             load_factor = alldata$LF,
                             fcr_veh = UCD_output$fcr_veh)
+  
 
 
   if(saveRDS){
@@ -293,10 +299,6 @@ generateEDGEdata <- function(input_folder, output_folder,
   if(saveRDS)
     saveRDS(prefs, file = level1path("prefs.RDS"))
 
-  print("-- prepare international aviation specific data")
-  IntAv_Prep <- IntAvPreparation(tech_output_adj =  alldata$demkm,
-                           input_folder= input_folder,
-                           GDP_country = GDP_country)
                            
   #################################################
   ## LVL 2 scripts
@@ -340,7 +342,7 @@ generateEDGEdata <- function(input_folder, output_folder,
                               GDP_POP = GDP_POP,
                               REMIND_scenario = REMIND_scenario,
                               smartlifestyle = smartlifestyle,
-                              ICCT_data =IntAv_Prep)
+                              ICCT_data = IntAv_Prep)
 
     if(saveRDS){
       saveRDS(dem_regr[["D_star"]], file = level2path("demand_regression.RDS"))
