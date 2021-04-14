@@ -173,21 +173,20 @@ lvl2_demandReg <- function(tech_output, price_baseline, GDP_POP, ICCT_data, REMI
                        ycol="eps",
                        idxcols="var",
                        extrapolate = TRUE)
+
   price_el[region %in% c("REF", "CHA", "IND") & var %in% c("income_elasticity_pass_sm", "income_elasticity_freight_sm"), eps := 0]
   price_el[region %in% c("OAS", "MEA", "LAM") & var %in% c("income_elasticity_pass_sm"), eps := 0.1]
   price_el[region %in% c("IND") & var %in% c("income_elasticity_pass_sm"), eps := 0.5]
   price_el[region %in% c("SSA", "CHA") & var %in% c("income_elasticity_pass_sm"), eps := 0.3]
-  price_el[region %in% c("EUR", "NEU", "USA", "CAZ", "JPN") & var %in% c("income_elasticity_pass_sm"), eps := 0.1]
-  
-  
+  price_el[region %in% c("EUR", "NEU", "USA", "CAZ", "JPN", "DEU", "ECE", "ECS", "ENC", "ESC", "ESW", "EWN", "FRA", "UKI", "NEN", "NES") & var %in% c("income_elasticity_pass_lo", "income_elasticity_pass_sm"), eps := 0.1]
+
   if (smartlifestyle) {
-    price_el[region =="REF" & var %in% c("income_elasticity_pass_lo_L","income_elasticity_pass_lo_B", "income_elasticity_pass_sm"), eps := 0]
-    price_el[region %in% c("OAS", "MEA", "LAM") & var %in% c("income_elasticity_pass_lo_L","income_elasticity_pass_lo_B" ,"income_elasticity_pass_sm"), eps := 0.1]
-    price_el[region %in% c("IND") & var %in% c("income_elasticity_pass_lo_L","income_elasticity_pass_lo_B" ,"income_elasticity_pass_sm"), eps := 0.4]
-    price_el[region %in% c("CHA") & var %in% c("income_elasticity_pass_lo_L","income_elasticity_pass_lo_B", "income_elasticity_pass_sm"), eps := 0.2]
-    price_el[region %in% c("SSA") & var %in% c("income_elasticity_pass_lo_L","income_elasticity_pass_lo_B", "income_elasticity_pass_sm"), eps := 0.5]
-    price_el[region %in% c("EUR", "NEU", "USA", "CAZ", "JPN") & var %in% c("income_elasticity_pass_lo_L","income_elasticity_pass_lo_B" ,"income_elasticity_pass_sm"), eps := 0]
-    
+    price_el[region =="REF" & var %in% c("income_elasticity_pass_lo", "income_elasticity_pass_sm"), eps := 0]
+    price_el[region %in% c("OAS", "MEA", "LAM") & var %in% c("income_elasticity_pass_lo", "income_elasticity_pass_sm"), eps := 0.1]
+    price_el[region %in% c("IND") & var %in% c("income_elasticity_pass_lo", "income_elasticity_pass_sm"), eps := 0.4]
+    price_el[region %in% c("CHA") & var %in% c("income_elasticity_pass_lo", "income_elasticity_pass_sm"), eps := 0.2]
+    price_el[region %in% c("SSA") & var %in% c("income_elasticity_pass_lo", "income_elasticity_pass_sm"), eps := 0.5]
+    price_el[region %in% c("EUR", "NEU", "USA", "CAZ", "JPN", "DEU", "ECE", "ECS", "ENC", "ESC", "ESW", "EWN", "FRA", "UKI", "NEN", "NES") & var %in% c("income_elasticity_pass_lo", "income_elasticity_pass_sm"), eps := 0]
   }
   
   price_el[region %in% c("IND", "OAS", "SSA", "MEA") & var %in% c("income_elasticity_pass_lo_L","income_elasticity_pass_lo_B"), eps := 0.25]
@@ -259,7 +258,9 @@ lvl2_demandReg <- function(tech_output, price_baseline, GDP_POP, ICCT_data, REMI
   
   price_el_int_aviation_L = dcast(price_el_int_aviation_L[,c("region","year","var","eps", "GDP_cap")], region + year + GDP_cap ~var, value.var = "eps")  
   price_el_int_aviation_B = dcast(price_el_int_aviation_B[,c("region","year","var","eps", "GDP_cap")], region + year + GDP_cap ~var, value.var = "eps") 
-  price_el[region %in% c("SSA", "OAS", "IND") & var %in% c("income_elasticity_pass_lo_L","income_elasticity_pass_lo_B"), eps :=eps*0.25]
+  ## adjust specific regions otherwise their demand grows too fast
+  price_el[region %in% c("OAS", "LAM", "CAZ","NES") & var %in% c("income_elasticity_pass_lo_L","income_elasticity_pass_lo_B"), eps :=eps*0.5]
+  price_el[region %in% c("SSA", "MEA") & var %in% c("income_elasticity_pass_lo_L","income_elasticity_pass_lo_B"), eps :=eps*0.75]
   price_el[var %in% c("price_elasticity_freight_lo", "price_elasticity_freight_sm", "price_elasticity_pass_lo_L", "price_elasticity_pass_lo_B", "price_elasticity_pass_sm"), eps := 0]
   price_el = dcast(price_el[,c("region","year","var","eps", "GDP_cap")], region + year + GDP_cap ~var, value.var = "eps")
   price_el = merge(price_el, price_el_int_aviation_L[,c(1,2,4)], by = c("region","year"),all.x = TRUE)
