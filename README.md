@@ -2,7 +2,7 @@
 
 R package **edgeTransport**, version **0.1.27**
 
-[![CRAN status](https://www.r-pkg.org/badges/version/edgeTransport)](https://cran.r-project.org/package=edgeTransport)    
+  
 
 ## Purpose and Functionality
 
@@ -46,9 +46,11 @@ In case of questions / problems please contact Alois Dirnaichner <dirnaichner@pi
 
 To cite package **edgeTransport** in publications use:
 
+
 Dirnaichner A, Rottoli M (2021). _edgeTransport: Prepare EDGE
 Transport Data for the REMIND model_. R package version
 0.1.27.
+
 
 A BibTeX entry for LaTeX users is
 
