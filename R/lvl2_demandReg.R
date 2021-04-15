@@ -218,21 +218,9 @@ lvl2_demandReg <- function(tech_output, price_baseline, GDP_POP, ICCT_data, RPK_
   price_el_int_aviation_L_RPK<-merge(price_el_int_aviation_L_RPK[,c(1:11,13)], price_el_int_aviation_L_RPK_adj, by = c("region","year"),all.x = TRUE)
   price_el_int_aviation_B_RPK<-merge(price_el_int_aviation_B_RPK[,c(1:11,13)], price_el_int_aviation_B_RPK_adj, by = c("region","year"),all.x = TRUE)
   ## Leisure Loop to adjust the decay_rate based on RPK/Capita data
-  for (j in unique(price_el_int_aviation_L_RPK$region)) {
-    for (i in unique(price_el_int_aviation_L_RPK$year[price_el_int_aviation_L_RPK$region == j])) {
-      if (price_el_int_aviation_L_RPK$RPKCAP[price_el_int_aviation_L_RPK$region == j & price_el_int_aviation_L_RPK$year == i] > decay_treshold_L) {
-        price_el_int_aviation_L_RPK$decay_rate[price_el_int_aviation_L_RPK$region == j & price_el_int_aviation_L_RPK$year >= i] <- price_el_int_aviation_L_RPK$decay_rate[price_el_int_aviation_L_RPK$region == j & price_el_int_aviation_L_RPK$year >= i] * decay_DR_L
-      }
-    }
-  }
+  price_el_int_aviation_L_RPK[RPKCAP > decay_treshold_L, decay_rate := decay_rate*decay_DR_L, by = c("region")]
   ## Business Loop to adjust the decay_rate based on RPK/Capita data
-  for (j in unique(price_el_int_aviation_B_RPK$region)) {
-    for (i in unique(price_el_int_aviation_B_RPK$year[price_el_int_aviation_B_RPK$region == j])) {
-      if (price_el_int_aviation_B_RPK$RPKCAP[price_el_int_aviation_B_RPK$region == j & price_el_int_aviation_B_RPK$year == i] > decay_treshold_B) {
-        price_el_int_aviation_B_RPK$decay_rate[price_el_int_aviation_B_RPK$region == j & price_el_int_aviation_B_RPK$year >= i] <- price_el_int_aviation_B_RPK$decay_rate[price_el_int_aviation_B_RPK$region == j & price_el_int_aviation_B_RPK$year >= i] * decay_DR_B
-      }
-    }
-  }
+  price_el_int_aviation_B_RPK[RPKCAP > decay_treshold_B, decay_rate := decay_rate*decay_DR_B, by = c("region")]
 
 
   price_el_int_aviation_L_RPK<- price_el_int_aviation_L_RPK[, c(3:11,13):= NULL]
@@ -240,21 +228,10 @@ lvl2_demandReg <- function(tech_output, price_baseline, GDP_POP, ICCT_data, RPK_
   price_el_int_aviation_B_RPK<- price_el_int_aviation_B_RPK[, c(3:11,13):= NULL]
   price_el_int_aviation_B = merge(price_el_int_aviation_B, price_el_int_aviation_B_RPK, by = c("region","year"),all.x = TRUE)
   ## Leisure Loop to adjust the Income Elasticity based on GDP/Capita treshold and the previous calculated decay rate based on RPK/Capita treshold
-  for (j in unique(price_el_int_aviation_L$region)) {
-    for (i in unique(price_el_int_aviation_L$year[price_el_int_aviation_L$region == j])) {
-      if (price_el_int_aviation_L$GDP_cap[price_el_int_aviation_L$region == j & price_el_int_aviation_L$year == i] > GDP_treshold_L) {
-        price_el_int_aviation_L$eps[price_el_int_aviation_L$region == j & price_el_int_aviation_L$year >= i] <- price_el_int_aviation_L$eps[price_el_int_aviation_L$region == j & price_el_int_aviation_L$year >= i] * price_el_int_aviation_L$decay_rate[price_el_int_aviation_L$region == j & price_el_int_aviation_L$year == i]
-      }
-    }
-  }
+  price_el_int_aviation_L[GDP_cap > GDP_treshold_L, eps := eps*decay_rate, by = c("region")]
   ## Business Loop to adjust the Income Elasticity based on GDP/Capita treshold and the previous calculated decay rate based on RPK/Capita treshold
-  for (j in unique(price_el_int_aviation_B$region)) {
-    for (i in unique(price_el_int_aviation_B$year[price_el_int_aviation_B$region == j])) {
-      if (price_el_int_aviation_B$GDP_cap[price_el_int_aviation_B$region == j & price_el_int_aviation_B$year == i] > GDP_treshold_B) {
-        price_el_int_aviation_B$eps[price_el_int_aviation_B$region == j & price_el_int_aviation_B$year >= i] <- price_el_int_aviation_B$eps[price_el_int_aviation_B$region == j & price_el_int_aviation_B$year >= i] * price_el_int_aviation_B$decay_rate[price_el_int_aviation_B$region == j & price_el_int_aviation_B$year == i]
-      }
-    }
-  }
+  price_el_int_aviation_B[GDP_cap > GDP_treshold_B, eps := eps*decay_rate, by = c("region")]
+
 
   price_el_int_aviation_L = dcast(price_el_int_aviation_L[,c("region","year","var","eps", "GDP_cap")], region + year + GDP_cap ~var, value.var = "eps")
   price_el_int_aviation_B = dcast(price_el_int_aviation_B[,c("region","year","var","eps", "GDP_cap")], region + year + GDP_cap ~var, value.var = "eps")
@@ -272,21 +249,9 @@ lvl2_demandReg <- function(tech_output, price_baseline, GDP_POP, ICCT_data, RPK_
   setnames(price_el, "income_elasticity_pass_lo_B.y", "income_elasticity_pass_lo_B")
   } else if (Baseline_Run == TRUE){
     ## Leisure Loop to adjust the Income Elasticity based on GDP/Capita treshold and the previous calculated decay rate based on RPK/Capita treshold
-    for (j in unique(price_el_int_aviation_L$region)) {
-      for (i in unique(price_el_int_aviation_L$year[price_el_int_aviation_L$region == j])) {
-        if (price_el_int_aviation_L$GDP_cap[price_el_int_aviation_L$region == j & price_el_int_aviation_L$year == i] > GDP_treshold_L) {
-          price_el_int_aviation_L$eps[price_el_int_aviation_L$region == j & price_el_int_aviation_L$year >= i] <- price_el_int_aviation_L$eps[price_el_int_aviation_L$region == j & price_el_int_aviation_L$year >= i] * decay_DR_L
-        }
-      }
-    }
+    price_el_int_aviation_L[GDP_cap > GDP_treshold_L, eps := eps*decay_DR_L, by = c("region", "year")]
     ## Business Loop to adjust the Income Elasticity based on GDP/Capita treshold and the previous calculated decay rate based on RPK/Capita treshold
-    for (j in unique(price_el_int_aviation_B$region)) {
-      for (i in unique(price_el_int_aviation_B$year[price_el_int_aviation_B$region == j])) {
-        if (price_el_int_aviation_B$GDP_cap[price_el_int_aviation_B$region == j & price_el_int_aviation_B$year == i] > GDP_treshold_B) {
-          price_el_int_aviation_B$eps[price_el_int_aviation_B$region == j & price_el_int_aviation_B$year >= i] <- price_el_int_aviation_B$eps[price_el_int_aviation_B$region == j & price_el_int_aviation_B$year >= i] *  decay_DR_B
-        }
-      }
-    }
+    price_el_int_aviation_B[GDP_cap > GDP_treshold_B, eps := eps*decay_DR_B, by = c("region", "year")]
 
     price_el_int_aviation_L = dcast(price_el_int_aviation_L[,c("region","year","var","eps", "GDP_cap")], region + year + GDP_cap ~var, value.var = "eps")
     price_el_int_aviation_B = dcast(price_el_int_aviation_B[,c("region","year","var","eps", "GDP_cap")], region + year + GDP_cap ~var, value.var = "eps")
@@ -302,7 +267,7 @@ lvl2_demandReg <- function(tech_output, price_baseline, GDP_POP, ICCT_data, RPK_
     price_el[, c("income_elasticity_pass_lo_L.x","income_elasticity_pass_lo_B.x"):= NULL]
     setnames(price_el, "income_elasticity_pass_lo_L.y", "income_elasticity_pass_lo_L")
     setnames(price_el, "income_elasticity_pass_lo_B.y", "income_elasticity_pass_lo_B")
-  }else {}
+  }
   ## calculate growth rates
   gdp_pop[,`:=`(index_GDP=GDP_val/shift(GDP_val), index_GDPcap=GDP_cap/shift(GDP_cap), index_POP=POP_val/shift(POP_val)), by=c("region")]
   ## merge GDP_POP and price elasticity
@@ -350,8 +315,7 @@ lvl2_demandReg <- function(tech_output, price_baseline, GDP_POP, ICCT_data, RPK_
   demand_tot_sector=tech_output[, .(demand_tot=sum(tech_output)), by=c("region", "year", "sector")]
 
   ## calculate 2020 demand for aviation industry based on ICCT Data
-  demand_tot_sector_avi= demand_tot_sector
-  demand_tot_sector_avi<- demand_tot_sector_avi[demand_tot_sector_avi$sector %like% "trn_aviation_intl"]
+  demand_tot_sector_avi<- demand_tot_sector[sector == "trn_aviation_intl"]
   demand_tot_sector_avi <- rbind(demand_tot_sector_avi,ICCT_data)
   ## interpolate
   demand_tot_sector_avi=approx_dt(dt = demand_tot_sector_avi, ## database to interpolate
@@ -414,90 +378,14 @@ lvl2_demandReg <- function(tech_output, price_baseline, GDP_POP, ICCT_data, RPK_
   ## COVID ADJUSTMENT - Totally exogenous COVID shock based on certain assumptions and actual COVID-impact data from the year 2020
   COVID_shock = fread(file.path(input_folder,COVID_dir, "COVID.csv"))
   D_star=merge(D_star, COVID_shock,by = c("region","year"),all.x = TRUE)
-  ## International Leisure adjustment
-  if (REMIND_scenario == "SSP1"){
-    for (j in unique(D_star$region)) {
-      for (i in unique(D_star$year[D_star$region == j])) {
-        if (D_star$year[D_star$region == j & D_star$year == i] > 2019) {
-          D_star$trn_aviation_intl_L[D_star$region == j & D_star$year == i] <- D_star$trn_aviation_intl_L[ D_star$region == j & D_star$year == i] * D_star$I_L_1[ D_star$region == j & D_star$year == i]
-        }
-      }
-    }
-  }else if (REMIND_scenario == "SSP2"){
-    for (j in unique(D_star$region)) {
-      for (i in unique(D_star$year[D_star$region == j])) {
-        if (D_star$year[D_star$region == j & D_star$year == i] > 2019) {
-          D_star$trn_aviation_intl_L[D_star$region == j & D_star$year == i] <- D_star$trn_aviation_intl_L[ D_star$region == j & D_star$year == i] * D_star$I_L_2[ D_star$region == j & D_star$year == i]
-        }
-      }
-    }
-  }else if (REMIND_scenario == "SSP3"){
-    for (j in unique(D_star$region)) {
-      for (i in unique(D_star$year[D_star$region == j])) {
-        if (D_star$year[D_star$region == j & D_star$year == i] > 2019) {
-          D_star$trn_aviation_intl_L[D_star$region == j & D_star$year == i] <- D_star$trn_aviation_intl_L[ D_star$region == j & D_star$year == i] * D_star$I_L_3[ D_star$region == j & D_star$year == i]
-        }
-      }
-    }
-  }else if (REMIND_scenario == "SSP4"){
-    for (j in unique(D_star$region)) {
-      for (i in unique(D_star$year[D_star$region == j])) {
-        if (D_star$year[D_star$region == j & D_star$year == i] > 2019) {
-          D_star$trn_aviation_intl_L[D_star$region == j & D_star$year == i] <- D_star$trn_aviation_intl_L[ D_star$region == j & D_star$year == i] * D_star$I_L_4[ D_star$region == j & D_star$year == i]
-        }
-      }
-    }
-  }else if (REMIND_scenario == "SSP5"){
-    for (j in unique(D_star$region)) {
-      for (i in unique(D_star$year[D_star$region == j])) {
-        if (D_star$year[D_star$region == j & D_star$year == i] > 2019) {
-          D_star$trn_aviation_intl_L[D_star$region == j & D_star$year == i] <- D_star$trn_aviation_intl_L[ D_star$region == j & D_star$year == i] * D_star$I_L_5[ D_star$region == j & D_star$year == i]
-        }
-      }
-    }
-  }else{}
-  ## International Business adjustment
-  if (REMIND_scenario == "SSP1"){
-    for (j in unique(D_star$region)) {
-      for (i in unique(D_star$year[D_star$region == j])) {
-        if (D_star$year[D_star$region == j & D_star$year == i] > 2019) {
-          D_star$trn_aviation_intl_B[D_star$region == j & D_star$year == i] <- D_star$trn_aviation_intl_B[ D_star$region == j & D_star$year == i] * D_star$I_B_1[ D_star$region == j & D_star$year == i]
-        }
-      }
-    }
-  }else if (REMIND_scenario == "SSP2"){
-    for (j in unique(D_star$region)) {
-      for (i in unique(D_star$year[D_star$region == j])) {
-        if (D_star$year[D_star$region == j & D_star$year == i] > 2019) {
-          D_star$trn_aviation_intl_B[D_star$region == j & D_star$year == i] <- D_star$trn_aviation_intl_B[ D_star$region == j & D_star$year == i] * D_star$I_B_2[ D_star$region == j & D_star$year == i]
-        }
-      }
-    }
-  }else if (REMIND_scenario == "SSP3"){
-    for (j in unique(D_star$region)) {
-      for (i in unique(D_star$year[D_star$region == j])) {
-        if (D_star$year[D_star$region == j & D_star$year == i] > 2019) {
-          D_star$trn_aviation_intl_B[D_star$region == j & D_star$year == i] <- D_star$trn_aviation_intl_B[ D_star$region == j & D_star$year == i] * D_star$I_B_3[ D_star$region == j & D_star$year == i]
-        }
-      }
-    }
-  }else if (REMIND_scenario == "SSP4"){
-    for (j in unique(D_star$region)) {
-      for (i in unique(D_star$year[D_star$region == j])) {
-        if (D_star$year[D_star$region == j & D_star$year == i] > 2019) {
-          D_star$trn_aviation_intl_B[D_star$region == j & D_star$year == i] <- D_star$trn_aviation_intl_B[ D_star$region == j & D_star$year == i] * D_star$I_B_4[ D_star$region == j & D_star$year == i]
-        }
-      }
-    }
-  }else if (REMIND_scenario == "SSP5"){
-    for (j in unique(D_star$region)) {
-      for (i in unique(D_star$year[D_star$region == j])) {
-        if (D_star$year[D_star$region == j & D_star$year == i] > 2019) {
-          D_star$trn_aviation_intl_B[D_star$region == j & D_star$year == i] <- D_star$trn_aviation_intl_B[ D_star$region == j & D_star$year == i] * D_star$I_B_5[ D_star$region == j & D_star$year == i]
-        }
-      }
-    }
-  }else{}
+  ## find values to be used depending on the SSP number
+  coeff_touse_L = paste0("I_L_", gsub("[^\\d]+", "", REMIND_scenario, perl=TRUE))
+  coeff_touse_B = paste0("I_B_", gsub("[^\\d]+", "", REMIND_scenario, perl=TRUE))
+  D_star = data.table(D_star)
+
+  D_star[year > 2019, trn_aviation_intl_L :=  trn_aviation_intl_L*get(coeff_touse_L), by = c("region", "year")]
+  D_star[year > 2019, trn_aviation_intl_B :=  trn_aviation_intl_B*get(coeff_touse_B), by = c("region", "year")]
+
   if (Baseline_Run == FALSE){
     D_star[,trn_aviation_intl:= trn_aviation_intl_L + trn_aviation_intl_B, by = c("region", "year")]
     D_star_av = D_star[,c("region", "year", "trn_aviation_intl_L", "trn_aviation_intl_B")]
@@ -525,6 +413,6 @@ lvl2_demandReg <- function(tech_output, price_baseline, GDP_POP, ICCT_data, RPK_
 
     return(Baseline_data)
 
-  }else {}
+  }
 
 }
