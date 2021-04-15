@@ -50,6 +50,7 @@ lvl0_mergePSIintensity <- function(GCAM_data, input_folder, PSI_dir="PSI", enhan
   setnames(LDV_PSI_int,old=c("2015","2040"),new=c("y2015","y2040"))
   LDV_PSI_int = LDV_PSI_int[!(technology %in% c("PHEV-c", "PHEV-e")),] ## PSI reports separately the electric and ICE running modes of a plug-in hybrid
 
+
   ## in the conservative scenario, conservative assumptions about costs of alternative technologies
   if (!(enhancedtech)) {
     LDV_PSI_int[technology %in% c("BEV", "FCEV", "HEV-p", "PHEV"), y2040 := y2040 + 0.5*(y2015-y2040), by = "technology"]
@@ -58,6 +59,7 @@ lvl0_mergePSIintensity <- function(GCAM_data, input_folder, PSI_dir="PSI", enhan
   ## give alternative pathways depending on the scenario
   if (enhancedtech & techswitch == "FCEV") {
     LDV_PSI_int[technology %in% c("BEV", "HEV-p", "PHEV"), y2040 := (y2015 + y2040)/2, by = "technology"] ## value in 2040 is halfway the loaded value in 2040 and 2015
+
   }
 
   LDV_PSI_int[,y2100:=0.1*(y2040-y2015)/(2040-2015)*(2100-2040)+y2040] ## set a value for 2100 that is not present in PSI database. It's set to 1/10 of the decrease between 2015 and 2040 (quite conservative)
@@ -165,6 +167,7 @@ lvl0_mergePSIintensity <- function(GCAM_data, input_folder, PSI_dir="PSI", enhan
                                  region %in% c("EU-12", "EU-15", "European Free Trade Association", "Europe Non EU") ]
 
   conv_pkm_mj=rbind(conv_pkm_mj_rest, conv_pkm_mj_EU, LDV_PSI_int)
+
 
   return(conv_pkm_mj)
 }

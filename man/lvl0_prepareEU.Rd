@@ -8,6 +8,7 @@ lvl0_prepareEU(
   EU_data,
   iso_data,
   intensity,
+  GDP_country,
   input_folder,
   GCAM2ISO_MAPPING,
   REMIND2ISO_MAPPING
@@ -19,6 +20,8 @@ lvl0_prepareEU(
 \item{iso_data}{iso level data}
 
 \item{intensity}{energy intensity of technologies}
+
+\item{GDP_country}{GDP ISO level}
 
 \item{input_folder}{folder hosting raw data}
 

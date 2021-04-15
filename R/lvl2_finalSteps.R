@@ -18,6 +18,7 @@ lvl2_REMINDdemand <- function(regrdemand, EDGE2teESmap, REMINDtall, REMIND_scena
                            xcol = "year", ycol = "value",
                            idxcols = c("region", "all_in"),
                            extrapolate=T)
+  
     ## add SSP dimension
     regrdemand[,all_GDPscen:=gdp_ssp_scenario]
     ## convert into trillionpkm

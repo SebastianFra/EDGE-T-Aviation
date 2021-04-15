@@ -2,7 +2,7 @@
 
 R package **edgeTransport**, version **0.1.27**
 
-[![CRAN status](https://www.r-pkg.org/badges/version/edgeTransport)](https://cran.r-project.org/package=edgeTransport)    
+  
 
 ## Purpose and Functionality
 
@@ -37,6 +37,13 @@ The package comes with a vignette describing the basic functionality of the pack
 ```r
 vignette("EDGEtransport") # Data preparation with EDGEtransport
 ```
+## COVID Data
+The exogenous COVID-Shock-Data which has been implemnted for the international aviation demand regression is motivated by several differnt sources these are:
+ICAO (2021), Effects of Novel Coronavirus (COVID-19) on Civil Aviation: Econmic Impact Analysis, https://www.icao.int/sustainability/Documents/Covid-19/ICAO_coronavirus_Econ_Impact.pdf
+Stoll, C.; Mehling, M.A. (2020), COVID19: Clinching the Climate Opportunity, One Earth
+Goessling, S.; Humpe, A.; Fichert, F.; Creutzig, F. (2021), COVID-19 and pathways to low carbon air transport until 2050, Environmental Reserach Letters
+International Energy Agency (2020), World Energy Outlook 2020
+Kearney (2020), The future of aviation: could COVID-19 be the first and final crisis for airlines, https://www.de.kearney.com/transportation-travel/whitepaper/?/a/the-future-of-aviation-could-covid-19-be-the-first-and-final-crisis-for-airlines
 
 ## Questions / Problems
 
@@ -46,9 +53,11 @@ In case of questions / problems please contact Alois Dirnaichner <dirnaichner@pi
 
 To cite package **edgeTransport** in publications use:
 
+
 Dirnaichner A, Rottoli M (2021). _edgeTransport: Prepare EDGE
 Transport Data for the REMIND model_. R package version
 0.1.27.
+
 
 A BibTeX entry for LaTeX users is
 

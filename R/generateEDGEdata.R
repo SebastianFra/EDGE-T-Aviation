@@ -13,7 +13,7 @@
 #' @param saveRDS optional saving of intermediate RDS files
 #'
 #' @return generated EDGE-transport input data
-#' @author Alois Dirnaichner, Marianna Rottoli
+#' @author Alois Dirnaichner, Marianna Rottoli, Sebastian Franz
 #' @import data.table
 #' @importFrom edgeTrpLib merge_prices calculate_logit_inconv_endog calcVint shares_intensity_and_demand calculate_capCosts prepare4REMIND calc_num_vehicles_stations
 #' @importFrom rmarkdown render
@@ -134,8 +134,8 @@ generateEDGEdata <- function(input_folder, output_folder,
   JRC_IDEES[,year :=as.numeric(gsub("y","",year))]
   JRC_IDEES=JRC_IDEES[year %in%c(1990,2000,2005,2010,2015)]
   JRC_IDEES[, EJ:= value*  ##in ktoe
-                   1e3*    ## in toe
-                   4.1868E-8]  ## in EJ
+              1e3*    ## in toe
+              4.1868E-8]  ## in EJ
   useful_var = c(
     ## international shipping
     "Maritime Bunkers|Energy Consumption|Total energy consumption.ktoe",
@@ -169,6 +169,8 @@ generateEDGEdata <- function(input_folder, output_folder,
   GCAM_data <- lvl0_GCAMraw(input_folder)
 
   ##function that loads PSI energy intensity for Europe (all LDVs) and for other regions (only alternative vehicles LDVs) and merges them with GCAM intensities. Final values: MJ/km (pkm and tkm)
+
+
   ## for alternative trucks: all regions (from PSI)
   print("-- merge PSI energy intensity data")
   intensity_PSI_GCAM_data <- lvl0_mergePSIintensity(GCAM_data, input_folder, enhancedtech = enhancedtech, techswitch = techswitch)
@@ -184,7 +186,12 @@ generateEDGEdata <- function(input_folder, output_folder,
   ## function that loads and prepares the non_fuel prices. It also load PSI-based purchase prices for EU. Final values: non fuel price in 1990USD/pkm (1990USD/tkm), annual mileage in vkt/veh/yr (vehicle km traveled per year),non_fuel_split in 1990USD/pkt (1990USD/tkm)
   print("-- load UCD database")
   UCD_output <- lvl0_loadUCD(GCAM_data = GCAM_data, GDP_country = GDP_country, EDGE_scenario = EDGE_scenario, REMIND_scenario = REMIND_scenario, GCAM2ISO_MAPPING = GCAM2ISO_MAPPING,
-                            input_folder = input_folder, years = years, enhancedtech = enhancedtech, selfmarket_taxes = selfmarket_taxes, rebates_febates = rebates_febates, techswitch = techswitch)
+                             input_folder = input_folder, years = years, enhancedtech = enhancedtech, selfmarket_taxes = selfmarket_taxes, rebates_febates = rebates_febates, techswitch = techswitch)
+
+  ## function that loads historical country-specific international aviation demand [billions RPK]
+  print("-- prepare international aviation specific data")
+  IntAv_Prep <- lvl0_IntAvPreparation(input_folder= input_folder,
+                                      GDP_country = GDP_country)
 
   ## function that integrates GCAM data. No conversion of units happening.
   print("-- correct tech output")
@@ -228,7 +235,7 @@ generateEDGEdata <- function(input_folder, output_folder,
   print("-- load EU data")
   EU_data <- lvl0_loadEU(input_folder)
   if(saveRDS)
-     saveRDS(EU_data, file = level0path("load_EU_data.RDS"))
+    saveRDS(EU_data, file = level0path("load_EU_data.RDS"))
 
   ## function that merges TRACCS, Eurostat databases with other input data. Final values: EI in MJ/km (pkm and tkm), demand in million km (pkm and tkm), LF in p/v
   print("-- prepare the EU related databases")
@@ -252,6 +259,7 @@ generateEDGEdata <- function(input_folder, output_folder,
   incocost <- lvl0_incocost(annual_mileage = iso_data$UCD_results$annual_mileage,
                             load_factor = alldata$LF,
                             fcr_veh = UCD_output$fcr_veh)
+
 
 
   if(saveRDS){
@@ -333,9 +341,9 @@ generateEDGEdata <- function(input_folder, output_folder,
                           smartlifestyle = smartlifestyle,
                           techswitch = techswitch)
 
+
   if(saveRDS)
     saveRDS(prefs, file = level1path("prefs.RDS"))
-
 
 
   #################################################
@@ -347,8 +355,6 @@ generateEDGEdata <- function(input_folder, output_folder,
   ## filter out prices and intensities that are related to not used vehicles-technologies in a certain region
   REMIND_prices = merge(REMIND_prices, unique(prefs$FV_final_pref[, c("region", "vehicle_type")]), by = c("region", "vehicle_type"), all.y = TRUE)
   IEAbal_comparison$merged_intensity = merge(IEAbal_comparison$merged_intensity, unique(prefs$FV_final_pref[!(vehicle_type %in% c("Cycle_tmp_vehicletype", "Walk_tmp_vehicletype")) , c("region", "vehicle_type")]), by = c("region", "vehicle_type"), all.y = TRUE)
-
-
   totveh=NULL
   ## multiple iterations of the logit calculation - set to 3
   for (i in seq(1,3,1)) {
@@ -372,6 +378,17 @@ generateEDGEdata <- function(input_folder, output_folder,
     shares <- logit_data[["share_list"]] ## shares of alternatives for each level of the logit function
     mj_km_data <- logit_data[["mj_km_data"]] ## energy intensity at a technology level
     prices <- logit_data[["prices_list"]] ## prices at each level of the logit function, 1990USD/pkm
+    ## Baseline demand regression run
+    dem_regr = lvl2_demandReg(tech_output = alldata$demkm,
+                              price_baseline = prices$S3S,
+                              GDP_POP = GDP_POP,
+                              REMIND_scenario = REMIND_scenario,
+                              smartlifestyle = smartlifestyle,
+                              ICCT_data = IntAv_Prep,
+                              RPK_cap_baseline_L = NULL,
+                              RPK_cap_baseline_B = NULL,
+                              input_folder = input_folder,
+                              Baseline_Run = TRUE)
 
     ## regression demand calculation
     print("-- performing demand regression")
@@ -380,10 +397,25 @@ generateEDGEdata <- function(input_folder, output_folder,
                               price_baseline = prices$S3S,
                               GDP_POP = GDP_POP,
                               REMIND_scenario = REMIND_scenario,
-                              smartlifestyle = smartlifestyle)
+                              smartlifestyle = smartlifestyle,
+                              ICCT_data = IntAv_Prep,
+                              RPK_cap_baseline_L = dem_regr$RPK_cap_baseline_L,
+                              RPK_cap_baseline_B = dem_regr$RPK_cap_baseline_B,
+                              input_folder = input_folder,
+                              Baseline_Run = FALSE)
 
-    if(saveRDS)
-      saveRDS(dem_regr, file = level2path("demand_regression.RDS"))
+    if(saveRDS){
+      saveRDS(dem_regr[["D_star"]], file = level2path("demand_regression.RDS"))
+      saveRDS(dem_regr[["D_star_av"]], file = level2path("demand_regression_aviation.RDS"))
+    }
+
+    ## calculate vintages (new shares, prices, intensity)
+    prices$base=prices$base[,c("region", "technology", "year", "vehicle_type", "subsector_L1", "subsector_L2", "subsector_L3", "sector", "non_fuel_price", "tot_price", "fuel_price_pkm",  "tot_VOT_price", "sector_fuel")]
+    vintages = calcVint(shares = shares,
+                        totdem_regr = dem_regr,
+                        prices = prices,
+                        mj_km_data = mj_km_data,
+                        years = years)
 
     ## calculate vintages (new shares, prices, intensity)
     prices$base=prices$base[,c("region", "technology", "year", "vehicle_type", "subsector_L1", "subsector_L2", "subsector_L3", "sector", "non_fuel_price", "tot_price", "fuel_price_pkm",  "tot_VOT_price", "sector_fuel")]
@@ -397,7 +429,6 @@ generateEDGEdata <- function(input_folder, output_folder,
     shares$FV_shares = vintages[["shares"]]$FV_shares
     prices = vintages[["prices"]]
     mj_km_data = vintages[["mj_km_data"]]
-
 
     if(saveRDS)
       saveRDS(vintages, file = level2path("vintages.RDS"))
@@ -493,6 +524,8 @@ generateEDGEdata <- function(input_folder, output_folder,
                                    EDGE2teESmap = EDGE2teESmap,
                                    REMINDtall = REMINDtall,
                                    REMIND_scenario = REMIND_scenario)
+
+
 
   print("-- preparing complex module-friendly output files")
   ## final value: in billionspkm or billions tkm and EJ; shares are in [-]

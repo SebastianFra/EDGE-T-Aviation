@@ -35,7 +35,6 @@ lvl0_toISO <- function(input_data, VOT_data, price_nonmot, UCD_data, GDP, GDP_co
                               weights=gdp_country)
     ## check if there are NAs
     stopifnot(!any(is.na(TO_iso$tech_output)))
-
     ## intensity and load factor are intensive
     int <- disaggregate_dt(intensity, GCAM2ISO_MAPPING)
     ## re-aggregate to REMIND regions
@@ -81,6 +80,7 @@ lvl0_toISO <- function(input_data, VOT_data, price_nonmot, UCD_data, GDP, GDP_co
 
     ## merge with non fuel price of corresponding values
     tmp2 = merge(tmp2, tmp3, by = c("time", "technology", "vehicle_type"))
+
 
     ## find year closest to 2010 for each region, this is the year at which is going to converge
     tmp2[, yearconv := time[which.min(abs(time - 2010))], by = c("region")]
@@ -168,6 +168,7 @@ lvl0_toISO <- function(input_data, VOT_data, price_nonmot, UCD_data, GDP, GDP_co
                             valuecol="non_fuel_price",
                             datacols=c("sector", "subsector_L3", "subsector_L2", "subsector_L1","vehicle_type", "technology", "type", "year"),
                             weights=gdp)
+
 
     ## convergence of non_fuel_price according to GDPcap
     ## working principle: non_fuel_price follows linear convergence between 2010 and the year it reaches GDPcap@(2010,richcountry). Values from richcountry for the following time steps (i.e. when GDPcap@(t,developing)>GDPcap@(2010,richcountry))
