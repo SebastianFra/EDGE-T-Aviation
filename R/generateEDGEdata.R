@@ -378,15 +378,14 @@ generateEDGEdata <- function(input_folder, output_folder,
     shares <- logit_data[["share_list"]] ## shares of alternatives for each level of the logit function
     mj_km_data <- logit_data[["mj_km_data"]] ## energy intensity at a technology level
     prices <- logit_data[["prices_list"]] ## prices at each level of the logit function, 1990USD/pkm
-    ## Baseline demand regression run
-    dem_regr = lvl2_demandReg(tech_output = alldata$demkm,
+    ## Baseline demand regression run, for international aviation
+    print("-- performing demand regression for Intl Av")
+    dem_regr_intl_av = lvl2_demandReg(tech_output = alldata$demkm,
                               price_baseline = prices$S3S,
                               GDP_POP = GDP_POP,
                               REMIND_scenario = REMIND_scenario,
                               smartlifestyle = smartlifestyle,
                               ICCT_data = IntAv_Prep,
-                              RPK_cap_baseline_L = NULL,
-                              RPK_cap_baseline_B = NULL,
                               input_folder = input_folder,
                               Baseline_Run = TRUE)
 
@@ -399,8 +398,8 @@ generateEDGEdata <- function(input_folder, output_folder,
                               REMIND_scenario = REMIND_scenario,
                               smartlifestyle = smartlifestyle,
                               ICCT_data = IntAv_Prep,
-                              RPK_cap_baseline_L = dem_regr$RPK_cap_baseline_L,
-                              RPK_cap_baseline_B = dem_regr$RPK_cap_baseline_B,
+                              RPK_cap_baseline_L = dem_regr_intl_av$RPK_cap_baseline_L,
+                              RPK_cap_baseline_B = dem_regr_intl_av$RPK_cap_baseline_B,
                               input_folder = input_folder,
                               Baseline_Run = FALSE)
 
