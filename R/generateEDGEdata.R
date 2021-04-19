@@ -398,8 +398,7 @@ generateEDGEdata <- function(input_folder, output_folder,
                               REMIND_scenario = REMIND_scenario,
                               smartlifestyle = smartlifestyle,
                               ICCT_data = IntAv_Prep,
-                              RPK_cap_baseline_L = dem_regr_intl_av$RPK_cap_baseline_L,
-                              RPK_cap_baseline_B = dem_regr_intl_av$RPK_cap_baseline_B,
+                              RPK_cap_baseline = dem_regr_intl_av,
                               input_folder = input_folder,
                               Baseline_Run = FALSE)
 
