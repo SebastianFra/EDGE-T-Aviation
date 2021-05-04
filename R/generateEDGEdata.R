@@ -258,7 +258,6 @@ generateEDGEdata <- function(input_folder, output_folder,
                           techswitch = techswitch)
 
 
-
   print("-- prepare international aviation specific data")
   IntAv_Prep <- IntAvPreparation(tech_output_adj =  alldata$demkm,
                            input_folder= input_folder,
@@ -292,7 +291,6 @@ generateEDGEdata <- function(input_folder, output_folder,
       intensity_data = IEAbal_comparison$merged_intensity,
       price_nonmot = iso_data$price_nonmot,
       techswitch = techswitch)
-
 
 
     shares <- logit_data[["share_list"]] ## shares of alternatives for each level of the logit function
