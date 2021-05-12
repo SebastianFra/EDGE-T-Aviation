@@ -36,17 +36,17 @@ lvl2_demandReg <- function(tech_output, price_baseline, GDP_POP, ICCT_data, RPK_
   ## PARAMETERS FOR ELASTICITY. These Parameters can be adjusted in order to reflect the specific SSP narrative correctly
   ## RPK Treshold & Decayand GDP Treshold, for business and leisure
   if (REMIND_scenario == "SSP1") {
-    decay_DR_L=0.7
-    decay_treshold_L= 1100
-    decay_DR_B=0.65
+    decay_DR_L=0.6
+    decay_treshold_L= 1000
+    decay_DR_B=0.5
     decay_treshold_B= 700
-    GDP_treshold_L= 50000
-    GDP_treshold_B= 45000
+    GDP_treshold_L= 40000
+    GDP_treshold_B= 35000
   }else if (REMIND_scenario == "SSP2") {
     decay_DR_L=0.85
-    decay_treshold_L= 1350
+    decay_treshold_L= 1500
     decay_DR_B=0.7
-    decay_treshold_B= 850
+    decay_treshold_B= 1200
     GDP_treshold_L= 60000
     GDP_treshold_B= 55000
   }else if (REMIND_scenario == "SSP3") {
@@ -65,11 +65,11 @@ lvl2_demandReg <- function(tech_output, price_baseline, GDP_POP, ICCT_data, RPK_
     GDP_treshold_B= 50000
   }else if (REMIND_scenario == "SSP5") {
     decay_DR_L=0.95
-    decay_treshold_L= 1600
+    decay_treshold_L= 2000
     decay_DR_B=0.85
-    decay_treshold_B= 1200
-    GDP_treshold_L= 70000
-    GDP_treshold_B= 56000
+    decay_treshold_B= 1700
+    GDP_treshold_L= 80000
+    GDP_treshold_B= 65000
   }
   
   ## Create a dt with GDP, POP and GDP_cap with EDGE regions
