@@ -50,4 +50,5 @@ DomAvPreparation <-function(tech_output_adj,input_folder,GDP_country,ICCT_dir="I
 }
 
 
+
   

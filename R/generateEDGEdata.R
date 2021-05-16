@@ -267,8 +267,7 @@ generateEDGEdata <- function(input_folder, output_folder,
    DomAv_Prep <- DomAvPreparation(tech_output_adj =  alldata$demkm,
                                 input_folder= input_folder,
                                 GDP_country = GDP_country)
-  
-                           
+   
   #################################################
   ## LVL 2 scripts
   #################################################
@@ -310,8 +309,12 @@ generateEDGEdata <- function(input_folder, output_folder,
                               REMIND2ISO_MAPPING_adj = REMIND2ISO_MAPPING_adj,
                               REMIND2ISO_MAPPING = REMIND2ISO_MAPPING,
                               COVID_scenario= COVID_scenario)
-
-    if(saveRDS)
-      saveRDS(dem_regr, file = level2path("demand_regression.RDS"))
+    
+    
+    if(saveRDS){
+      saveRDS(dem_regr[["D_star"]], file = level2path("demand_regression.RDS"))
+      saveRDS(dem_regr[["elasticities"]], file = level2path("elasticities.RDS"))
+    }
+    
     write_xlsx(dem_regr, "C:/Users/franz/Documents/R/Master-Thesis/EDGE-T/Export Data/demand.xlsx")
 }

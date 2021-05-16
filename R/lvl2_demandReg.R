@@ -27,12 +27,11 @@ lvl2_demandReg <- function(tech_output, price_baseline, GDP_POP, REMIND_scenario
   #PARAMETERS FOR ELASTICITY
   #RPK Treshold & Decay
   if (REMIND_scenario == "SSP1") {
-    decay_DR_L=0.3
-
-    decay_treshold_L= 500
+    decay_DR_L=0.4
+    decay_treshold_L= 600
   }else if (REMIND_scenario == "SSP2") {
-    decay_DR_L=0.75
-    decay_treshold_L= 1500
+    decay_DR_L=0.5
+    decay_treshold_L= 1200
   }else if (REMIND_scenario == "SSP3") {
     decay_DR_L=0.6
     decay_treshold_L= 1350
@@ -40,17 +39,16 @@ lvl2_demandReg <- function(tech_output, price_baseline, GDP_POP, REMIND_scenario
     decay_DR_L=0.6
     decay_treshold_L= 1350
   }else if (REMIND_scenario == "SSP5") {
-
-    decay_DR_L=0.95
-    decay_treshold_L= 2500
+    decay_DR_L=0.85
+    decay_treshold_L= 2000
   }else{}
   #mutate the decayrate for Income elasticity Business
   if (REMIND_scenario == "SSP1") {
-    decay_DR_B=0.2
+    decay_DR_B=0.3
     decay_treshold_B= 400
   }else if (REMIND_scenario == "SSP2") {
-    decay_DR_B=0.6
-    decay_treshold_B= 1400
+    decay_DR_B=0.4
+    decay_treshold_B= 800
   }else if (REMIND_scenario == "SSP3") {
     decay_DR_B=0.7
     decay_treshold_B= 850
@@ -58,8 +56,8 @@ lvl2_demandReg <- function(tech_output, price_baseline, GDP_POP, REMIND_scenario
     decay_DR_B=0.7
     decay_treshold_B= 850
   }else if (REMIND_scenario == "SSP5") {
-    decay_DR_B=0.9
-    decay_treshold_B= 2000
+    decay_DR_B=0.75
+    decay_treshold_B= 1400
 
   }else{}
   #GDP Treshold
@@ -69,26 +67,26 @@ lvl2_demandReg <- function(tech_output, price_baseline, GDP_POP, REMIND_scenario
   if (REMIND_scenario == "SSP1") {
     GDP_treshold_L= 30000
   }else if (REMIND_scenario == "SSP2") {
-    GDP_treshold_L= 65000
+    GDP_treshold_L= 60000
   }else if (REMIND_scenario == "SSP3") {
     GDP_treshold_L= 55000
   }else if (REMIND_scenario == "SSP4") {
     GDP_treshold_L= 55000
   }else if (REMIND_scenario == "SSP5") {
-    GDP_treshold_L= 90000
+    GDP_treshold_L= 80000
   }else{}
   
   #Business
   if (REMIND_scenario == "SSP1") {
-    GDP_treshold_B= 20000
+    GDP_treshold_B= 25000
   }else if (REMIND_scenario == "SSP2") {
-    GDP_treshold_B= 55000
+    GDP_treshold_B= 50000
   }else if (REMIND_scenario == "SSP3") {
     GDP_treshold_B= 50000
   }else if (REMIND_scenario == "SSP4") {
     GDP_treshold_B= 50000
   }else if (REMIND_scenario == "SSP5") {
-    GDP_treshold_B= 75000
+    GDP_treshold_B= 70000
   }else{}
   #Domestic Derivation
   if (REMIND_scenario == "SSP1") {
@@ -96,15 +94,15 @@ lvl2_demandReg <- function(tech_output, price_baseline, GDP_POP, REMIND_scenario
     floor_domestic_business = 0.075
     top_domestic_leisure = 1
     top_domestic_business = 1
-    special_country_floor_leisure = 0.185
-    special_country_floor_business = 0.125
+    special_country_floor_leisure = 0.4
+    special_country_floor_business = 0.3
   }else if (REMIND_scenario == "SSP2") {
-    floor_domestic_leisure = 0.5
-    floor_domestic_business = 0.4
+    floor_domestic_leisure = 0.35
+    floor_domestic_business = 0.3
     top_domestic_leisure = 1
     top_domestic_business = 1
-    special_country_floor_leisure = 0.6
-    special_country_floor_business = 0.55
+    special_country_floor_leisure = 0.7
+    special_country_floor_business = 0.6
   }else if (REMIND_scenario == "SSP3") {
     floor_domestic_leisure = 0.20
     floor_domestic_business = 0.10
@@ -121,11 +119,11 @@ lvl2_demandReg <- function(tech_output, price_baseline, GDP_POP, REMIND_scenario
     special_country_floor_business = 0.8
   }else if (REMIND_scenario == "SSP5") {
     floor_domestic_leisure = 0.75
-    floor_domestic_business = 0.65
+    floor_domestic_business = 0.6
     top_domestic_leisure = 1
     top_domestic_business = 1
-    special_country_floor_leisure = 0.9
-    special_country_floor_business = 0.95
+    special_country_floor_leisure = 0.85
+    special_country_floor_business = 0.7
   }else{}
   ## Create a dt with GDP, POP and GDP_cap with EDGE isos
   gdp_pop = copy(GDP_POP)
@@ -171,21 +169,21 @@ lvl2_demandReg <- function(tech_output, price_baseline, GDP_POP, REMIND_scenario
   tmp[, norm := ifelse(var == "price_elasticity_pass_sm", -0.625, norm)]
   ## pass lo (see The income elasticity of air travel a meta analysis, Gallet et al 2014
   tmp[, norm := ifelse(var == "price_elasticity_pass_lo_L", -1, norm)]
-  tmp[, vrich := ifelse(var == "income_elasticity_pass_lo_L", 1.6, vrich)]
-  tmp[, vrich := ifelse(var == "price_elasticity_pass_lo_L", -0.25, vrich)]
-  tmp[, rich := ifelse(var == "income_elasticity_pass_lo_L", 1.7, rich)]
-  tmp[, rich := ifelse(var == "price_elasticity_pass_lo_L", -0.5, rich)]
-  tmp[, vpoor := ifelse(var == "income_elasticity_pass_lo_L", 1.8, vpoor)]
-  tmp[, vpoor := ifelse(var == "price_elasticity_pass_lo_L", -0.7, vpoor)]
+  tmp[, vrich := ifelse(var == "income_elasticity_pass_lo_L", 1.5, vrich)]
+  tmp[, vrich := ifelse(var == "price_elasticity_pass_lo_L", -1, vrich)]
+  tmp[, rich := ifelse(var == "income_elasticity_pass_lo_L", 1.5, rich)]
+  tmp[, rich := ifelse(var == "price_elasticity_pass_lo_L", -1, rich)]
+  tmp[, vpoor := ifelse(var == "income_elasticity_pass_lo_L", 1.5, vpoor)]
+  tmp[, vpoor := ifelse(var == "price_elasticity_pass_lo_L", -1, vpoor)]
   tmp[, norm := ifelse(var == "income_elasticity_pass_lo_L", 1.5, norm)]
   tmp[, norm := ifelse(var == "price_elasticity_pass_lo_L", -1, norm)]
-  tmp[, vrich := ifelse(var == "income_elasticity_pass_lo_B", 1.7, vrich)]
-  tmp[, vrich := ifelse(var == "price_elasticity_pass_lo_B", -0.25, vrich)]
-  tmp[, rich := ifelse(var == "income_elasticity_pass_lo_B", 1.9, rich)]
-  tmp[, rich := ifelse(var == "price_elasticity_pass_lo_B", -0.5, rich)]
+  tmp[, vrich := ifelse(var == "income_elasticity_pass_lo_B", 1.5, vrich)]
+  tmp[, vrich := ifelse(var == "price_elasticity_pass_lo_B", -1, vrich)]
+  tmp[, rich := ifelse(var == "income_elasticity_pass_lo_B", 1.5, rich)]
+  tmp[, rich := ifelse(var == "price_elasticity_pass_lo_B", -1, rich)]
   tmp[, vpoor := ifelse(var == "income_elasticity_pass_lo_B", 1.5, vpoor)]
-  tmp[, vpoor := ifelse(var == "price_elasticity_pass_lo_B", -0.7, vpoor)]
-  tmp[, norm := ifelse(var == "income_elasticity_pass_lo_B", 2, norm)]
+  tmp[, vpoor := ifelse(var == "price_elasticity_pass_lo_B", -1, vpoor)]
+  tmp[, norm := ifelse(var == "income_elasticity_pass_lo_B", 1.5, norm)]
   tmp[, norm := ifelse(var == "price_elasticity_pass_lo_B", -1, norm)]
   ## freight sm
   tmp[, vrich := ifelse(var == "income_elasticity_freight_sm", 0.1875, vrich)]
@@ -205,6 +203,7 @@ lvl2_demandReg <- function(tech_output, price_baseline, GDP_POP, REMIND_scenario
   tmp[, vpoor := ifelse(var == "price_elasticity_freight_lo", -0.5, vpoor)]
   tmp[, norm := ifelse(var == "income_elasticity_freight_lo", 0.4, norm)]
   tmp[, norm := ifelse(var == "price_elasticity_freight_lo", -0.65, norm)]
+  
 
   price_el = merge(price_el, tmp, by = "iso", allow.cartesian = TRUE)
   price_el[, eps := ifelse(GDP_cap < 15000, vpoor, NA)]
@@ -212,13 +211,13 @@ lvl2_demandReg <- function(tech_output, price_baseline, GDP_POP, REMIND_scenario
   price_el[, eps := ifelse(GDP_cap > 25000 & GDP_cap < 30000, vrich, eps)]
   price_el[, eps := ifelse(GDP_cap < 25000 & GDP_cap >= 15000, norm, eps)]
   
-  ## interpolate of gdpcap values
+'  ## interpolate of gdpcap values
   price_el = approx_dt(dt = price_el,
                        xdata=unique(price_el$GDP_cap),
                        xcol = "GDP_cap",
                        ycol="eps",
                        idxcols="var",
-                       extrapolate = TRUE)
+                       extrapolate = TRUE)'
   price_el<-merge(price_el,REMIND2ISO_MAPPING, by =c("iso"))
   price_el_int_aviation_L <- price_el[var == "income_elasticity_pass_lo_L"]
   price_el_int_aviation_B <- price_el[var == "income_elasticity_pass_lo_B"]
@@ -270,7 +269,9 @@ lvl2_demandReg <- function(tech_output, price_baseline, GDP_POP, REMIND_scenario
       }
     }
   }
-
+  
+  price_el_int_aviation_L <- subset(price_el_int_aviation_L, price_el_int_aviation_L$year <=2100 & price_el_int_aviation_L$year >=2000)
+  price_el_int_aviation_B <- subset(price_el_int_aviation_B, price_el_int_aviation_B$year <=2100 & price_el_int_aviation_B$year >=2000)
   price_el_int_aviation_L_RPK<- price_el_int_aviation_L_RPK[, c(3:11,13):= NULL] 
   price_el_int_aviation_L = merge(price_el_int_aviation_L, price_el_int_aviation_L_RPK, by = c("iso","year"),all.x = TRUE)
   price_el_int_aviation_B_RPK<- price_el_int_aviation_B_RPK[, c(3:11,13):= NULL] 
@@ -292,6 +293,7 @@ lvl2_demandReg <- function(tech_output, price_baseline, GDP_POP, REMIND_scenario
       }
     }
   }
+  
   price_el_int_aviation_L = dcast(price_el_int_aviation_L[,c("iso","year","var","eps", "GDP_cap")], iso + year + GDP_cap ~var, value.var = "eps")  
   price_el_int_aviation_B = dcast(price_el_int_aviation_B[,c("iso","year","var","eps", "GDP_cap")], iso + year + GDP_cap ~var, value.var = "eps") 
   price_el = dcast(price_el[,c("iso","year","var","eps", "GDP_cap")], iso + year + GDP_cap ~var, value.var = "eps")
@@ -323,6 +325,8 @@ lvl2_demandReg <- function(tech_output, price_baseline, GDP_POP, REMIND_scenario
                      idxcols=c("iso", "variable"), ## equivalent of "group_by" in dplyr and "by=.(....)" in data.table
                      extrapolate = T) ## extrapolate? i.e. min(xdata)<min(unique(dat$year))|max(xdata)>max(unique(dat$year))
   price_el=dcast( price_el,iso+year~variable,value.var="value")
+  elasticities<-price_el
+  
   #disaggreagte  data
   gdp_pop_a <- disaggregate_dt(gdp_pop, REMIND2ISO_MAPPING,
                                valuecol="GDP_cap",
@@ -413,8 +417,7 @@ lvl2_demandReg <- function(tech_output, price_baseline, GDP_POP, REMIND_scenario
                                        weights=GDP_country)
 
   #calculate 2020 demand for aviation industry based on ICCT Data
-  demand_tot_sector_avi= demand_tot_sector
-  demand_tot_sector_avi<- demand_tot_sector_avi[demand_tot_sector_avi$sector %like% "trn_aviation_intl"]
+  demand_tot_sector_avi<- demand_tot_sector[demand_tot_sector$sector %like% "trn_aviation_intl"]
   setnames(ICCT_data_I,"value", "demand_tot")
   demand_tot_sector_avi <- rbind(demand_tot_sector_avi,ICCT_data_I)
   demand_tot_sector_avi[, demand_tot := ifelse( year == 2005 ,NA , demand_tot) ]
@@ -427,7 +430,6 @@ lvl2_demandReg <- function(tech_output, price_baseline, GDP_POP, REMIND_scenario
                                   xcol="year", ## x-axis of the interpolation, i.e. the years that you indeed have available
                                   idxcols=c("iso", "sector"), ## equivalent of "group_by" in dplyr and "by=.(....)" in data.table
                                   extrapolate = T) ## extrapolate? i.e. min(xdata)<min(unique(dat$year))|max(xdata)>max(unique(dat$year))
-  #from long to wide format, so that the df has separate columns for all transport modes
   demand_tot_sector=approx_dt(dt = demand_tot_sector, ## database to interpolate
                               xdata = seq(1990,2020,1), ## time steps on which to interpolate
                               ycol = "demand_tot", ## column containing the data to interpolate
@@ -436,7 +438,45 @@ lvl2_demandReg <- function(tech_output, price_baseline, GDP_POP, REMIND_scenario
                               extrapolate = T) ## extrapolate? i.e. min(xdata)<min(unique(dat$year))|max(xdata)>max(unique(dat$year))
   demand_tot_sector=dcast(demand_tot_sector, iso + year  ~ sector, value.var = "demand_tot", fun.aggregate = sum, margins="sector")
   demand_tot_sector_avi=dcast(demand_tot_sector_avi, iso + year  ~ sector, value.var = "demand_tot", fun.aggregate = sum, margins="sector")
+  #Prepare international aviation data (data from: https://www.iata.org/contentassets/a686ff624550453e8bf0c9b3f7f0ab26/wats-2020-mediakit.pdf)
+  #include IATA historical data
+  IATA_data<-demand_tot_sector_avi
+  IATA_data<- IATA_data[IATA_data$iso %like% "DEU"]
+  IATA_data<-IATA_data[,c(2)]
+  IATA_data <- transform( IATA_data, share = 1)
+  IATA_data[, share := ifelse( year == 2000 , 1 , share) ]
+  IATA_data[, share := ifelse( year == 2000 , 1 , share) ]
+  IATA_data[, share := ifelse( year == 2001 , 0.98 , share) ]
+  IATA_data[, share := ifelse( year == 2002 , 1.02, share) ]
+  IATA_data[, share := ifelse( year == 2003 , 1.002 , share) ]
+  IATA_data[, share := ifelse( year == 2004 , 1.18 , share) ]
+  IATA_data[, share := ifelse( year == 2005 , 1.08 , share) ]
+  IATA_data[, share := ifelse( year == 2006 , 1.07 , share) ]
+  IATA_data[, share := ifelse( year == 2007 , 1.07 , share) ]
+  IATA_data[, share := ifelse( year == 2008 , 1.02 , share) ]
+  IATA_data[, share := ifelse( year == 2009 , 0.98 , share) ]
+  IATA_data[, share := ifelse( year == 2010 , 1.06, share) ]
+  IATA_data[, share := ifelse( year == 2011 , 1.05 , share) ]
+  IATA_data[, share := ifelse( year == 2012 , 1.05 , share) ]
+  IATA_data[, share := ifelse( year == 2013 , 1.04 , share) ]
+  IATA_data[, share := ifelse( year == 2014 , 1.05 , share) ]
+  IATA_data[, share := ifelse( year == 2015 , 1.06 , share) ]
+  IATA_data[, share := ifelse( year == 2016 , 1.07 , share) ]
+  IATA_data[, share := ifelse( year == 2017 , 1.08 , share) ]
+  IATA_data[, share := ifelse( year == 2018 , 1.06 , share) ]
+  IATA_data[, share := ifelse( year == 2019 , 1.05 , share) ]
+  IATA_data[, share := ifelse( year == 2020 , 1.08 , share) ]
+  demand_tot_sector_avi=merge(demand_tot_sector_avi,IATA_data, by = c("year"),all.x = TRUE)
   
+  for (j in unique(demand_tot_sector_avi$iso)) {
+    for (i in unique(demand_tot_sector_avi$year[demand_tot_sector_avi$iso == j])) { 
+      if (demand_tot_sector_avi$year[demand_tot_sector_avi$iso == j & demand_tot_sector_avi$year == i] > 2000) { 
+        demand_tot_sector_avi$trn_aviation_intl[demand_tot_sector_avi$iso == j & demand_tot_sector_avi$year == i] <- demand_tot_sector_avi$trn_aviation_intl[demand_tot_sector_avi$iso == j & demand_tot_sector_avi$year == i] * demand_tot_sector_avi$share[demand_tot_sector_avi$iso == j & demand_tot_sector_avi$year == i]
+      }
+    }
+  }
+  demand_tot_sector_avi<-demand_tot_sector_avi[,c(1,2,3)]
+  #from long to wide format, so that the df has separate columns for all transport modes
   #merge D* and historical demand
   D_star_avi=merge(D_star,demand_tot_sector_avi, by = c("iso","year"),all.x = TRUE)
   D_star=merge(D_star,demand_tot_sector, by = c("iso","year"),all.x = TRUE)
@@ -464,7 +504,6 @@ lvl2_demandReg <- function(tech_output, price_baseline, GDP_POP, REMIND_scenario
     D_star_avi[is.na(trn_aviation_intl_B) & !is.na(tmp),trn_aviation_intl_B:=tmp]
     i=i+1
   }
-  
   ## select only the columns that contains the demand
   D_star[, c("tmp", "D_star_f_sm", "D_star_p_sm", "D_star_f_lo", "D_star_p_lo_L","D_star_p_lo_B","trn_aviation_intl_B","trn_aviation_intl_L","trn_aviation_intl") := NULL]
   D_star_avi[, c( "tmp", "D_star_f_sm", "D_star_p_sm", "D_star_f_lo", "D_star_p_lo_L","D_star_p_lo_B","trn_freight","trn_pass","trn_shipping_intl","trn_aviation_intl") := NULL]
@@ -481,14 +520,14 @@ lvl2_demandReg <- function(tech_output, price_baseline, GDP_POP, REMIND_scenario
   #loop to replace international values with ICCT domestic data
   for (j in unique(D_star$iso)) {
     for (i in unique(D_star$year[D_star$iso == j])) { 
-      if (D_star$year[D_star$iso == j & D_star$year == i] >= 2019) { 
+      if (D_star$year[D_star$iso == j & D_star$year == i] > 2010) { 
         D_star$trn_aviation_intl_d_L[D_star$iso == j & D_star$year == i] <- D_star$trn_aviation_intl_d_L[D_star$iso == j & D_star$year == i]* D_star$share[D_star$iso == j & D_star$year == i]
       }
     }
   }
   for (j in unique(D_star$iso)) {
     for (i in unique(D_star$year[D_star$iso == j])) { 
-      if (D_star$year[D_star$iso == j & D_star$year == i] >= 2019) { 
+      if (D_star$year[D_star$iso == j & D_star$year == i] >2010) { 
         D_star$trn_aviation_intl_d_B[D_star$iso == j & D_star$year == i] <- D_star$trn_aviation_intl_d_B[D_star$iso == j & D_star$year == i]* D_star$share[D_star$iso == j & D_star$year == i]
       }
     }
@@ -498,8 +537,8 @@ lvl2_demandReg <- function(tech_output, price_baseline, GDP_POP, REMIND_scenario
   Domestic_shares =fread(system.file("extdata", "Domestic_shares.csv", package = "edgeTransport"))
   Domestic_shares[, shares_d_L := ifelse( year == 2100 ,floor_domestic_leisure , shares_d_L) ]
   Domestic_shares[, shares_d_B := ifelse( year == 2100 , floor_domestic_business, shares_d_B) ]
-  Domestic_shares[, shares_d_L := ifelse( year == 2005 ,top_domestic_leisure , shares_d_L) ]
-  Domestic_shares[, shares_d_B := ifelse( year == 2005 , top_domestic_business, shares_d_B) ]
+  Domestic_shares[, shares_d_L := ifelse( year == 2015 ,top_domestic_leisure , shares_d_L) ]
+  Domestic_shares[, shares_d_B := ifelse( year == 2015 , top_domestic_business, shares_d_B) ]
   #adjust for very larger countries
   Domestic_shares[, shares_d_L := ifelse( year == 2100 & iso == "RUS" , special_country_floor_leisure , shares_d_L) ]
   Domestic_shares[, shares_d_B := ifelse( year == 2100 & iso == "RUS"  , special_country_floor_business , shares_d_B) ]
@@ -525,7 +564,7 @@ lvl2_demandReg <- function(tech_output, price_baseline, GDP_POP, REMIND_scenario
   #domestic leisure
   for (j in unique(D_star$iso)) {
     for (i in unique(D_star$year[D_star$iso == j])) { 
-      if (D_star$year[D_star$iso == j & D_star$year == i] > 2000) { 
+      if (D_star$year[D_star$iso == j & D_star$year == i] > 2015) { 
         D_star$trn_aviation_intl_d_L[D_star$iso == j & D_star$year == i] <- D_star$trn_aviation_intl_d_L[ D_star$iso == j & D_star$year == i] * D_star$shares_d_L[ D_star$iso == j & D_star$year == i]
       }
     }
@@ -533,7 +572,7 @@ lvl2_demandReg <- function(tech_output, price_baseline, GDP_POP, REMIND_scenario
   #domestic business
   for (j in unique(D_star$iso)) {
     for (i in unique(D_star$year[D_star$iso == j])) { 
-      if (D_star$year[D_star$iso == j & D_star$year == i] > 2000) { 
+      if (D_star$year[D_star$iso == j & D_star$year == i] > 2015) { 
         D_star$trn_aviation_intl_d_B[D_star$iso == j & D_star$year == i] <- D_star$trn_aviation_intl_d_B[ D_star$iso == j & D_star$year == i] * D_star$shares_d_B[ D_star$iso == j & D_star$year == i]
       }
     }
@@ -754,7 +793,7 @@ lvl2_demandReg <- function(tech_output, price_baseline, GDP_POP, REMIND_scenario
                 measure.vars = c("trn_aviation_intl_L","trn_aviation_intl_B","trn_aviation_intl_d_B", "trn_aviation_intl_d_L" ,"trn_freight", "trn_pass", "trn_shipping_intl", "trn_aviation_intl"))
   D_star = D_star[,.(iso, year, demand = value, sector = variable)]
   D_star<-na.omit(D_star)
-  #get historic crises correct - 9/11 & SARS in 2002/2003 and Financial Crisis 2008/2009
+'  #get historic crises correct - 9/11 & SARS in 2002/2003 and Financial Crisis 2008/2009
   D_star[,   demand := ifelse(year == 2002 & sector == "trn_aviation_intl"   ,demand * 0.95, demand) ]
   D_star[,   demand := ifelse(year == 2003 & sector == "trn_aviation_intl"   ,demand * 0.95, demand) ]
   D_star[,   demand := ifelse(year == 2008 & sector == "trn_aviation_intl"   ,demand * 0.9, demand) ]
@@ -774,8 +813,11 @@ lvl2_demandReg <- function(tech_output, price_baseline, GDP_POP, REMIND_scenario
   D_star[,   demand := ifelse(year == 2002 & sector == "trn_aviation_intl_d_B"   ,demand * 0.95, demand) ]
   D_star[,   demand := ifelse(year == 2003 & sector == "trn_aviation_intl_d_B"   ,demand * 0.95, demand) ]
   D_star[,   demand := ifelse(year == 2008 & sector == "trn_aviation_intl_d_B"   ,demand * 0.9, demand) ]
-  D_star[,   demand := ifelse(year == 2009 & sector == "trn_aviation_intl_d_B"   ,demand * 0.9, demand) ]
+  D_star[,   demand := ifelse(year == 2009 & sector == "trn_aviation_intl_d_B"   ,demand * 0.9, demand) ]'
   D_star[,demand:=demand*1e-6] 
-  return(D_star)
+  Demand_Regression_Data = list(D_star = D_star,
+                   elasticities = elasticities)
+  
+  return(Demand_Regression_Data)
   
 }
