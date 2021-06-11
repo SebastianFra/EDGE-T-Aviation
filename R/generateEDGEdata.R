@@ -110,6 +110,7 @@ generateEDGEdata <- function(input_folder, output_folder,
   POP = merge(POP_country, REMIND2ISO_MAPPING, by.x = "iso2c", by.y = "iso")
   POP = POP[,.(value = sum(value)), by = c("region", "year")]
   setnames(POP_country, old = c("iso2c", "variable"), new = c("iso", "POP"),skip_absent=TRUE)
+ 
 
   GDP_POP=merge(GDP,POP[,.(region,year,POP_val=value)],all = TRUE,by=c("region","year"))
   GDP_POP[,GDP_cap:=weight/POP_val]
@@ -295,17 +296,18 @@ generateEDGEdata <- function(input_folder, output_folder,
     shares <- logit_data[["share_list"]] ## shares of alternatives for each level of the logit function
     mj_km_data <- logit_data[["mj_km_data"]] ## energy intensity at a technology level
     prices <- logit_data[["prices_list"]] ## prices at each level of the logit function, 1990USD/pkm
-
+    setnames(POP_country, old = "value", new = "weight")
     ## regression demand calculation
     print("-- performing demand regression")
     dem_regr = lvl2_demandReg(tech_output = alldata$demkm,
                               price_baseline = prices$S3S,
+                              GDP_country = GDP_country,
+                              POP_country =POP_country,
                               GDP_POP = GDP_POP,
                               REMIND_scenario = REMIND_scenario,
                               smartlifestyle = smartlifestyle,
                               ICCT_data_I = IntAv_Prep,
                               ICCT_data_D = DomAv_Prep,
-                              GDP_country = GDP_country,
                               REMIND2ISO_MAPPING_adj = REMIND2ISO_MAPPING_adj,
                               REMIND2ISO_MAPPING = REMIND2ISO_MAPPING,
                               COVID_scenario= COVID_scenario)
@@ -316,5 +318,6 @@ generateEDGEdata <- function(input_folder, output_folder,
       saveRDS(dem_regr[["elasticities"]], file = level2path("elasticities.RDS"))
     }
     
-    write_xlsx(dem_regr, "C:/Users/franz/Documents/R/Master-Thesis/EDGE-T/Export Data/demand.xlsx")
+    write_xlsx(dem_regr$D_star, "C:/Users/franz/Documents/R/Master-Thesis/EDGE-T/Export Data/demand.xlsx")
+    write.csv2(dem_regr$Threshold_data, "C:/Users/franz/Documents/R/Master-Thesis/EDGE-T/Export Data/Threshold_data.csv")
 }
