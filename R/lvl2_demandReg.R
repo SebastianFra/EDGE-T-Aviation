@@ -27,11 +27,11 @@ lvl2_demandReg <- function(tech_output, price_baseline, GDP_POP, REMIND_scenario
   #PARAMETERS FOR ELASTICITY
   #RPK Treshold & Decay
   if (REMIND_scenario == "SSP1") {
-    decay_RPK=0.6
+    decay_RPK=0.7
     decay_GDP=0.75
     decay_threshold= 1500
   }else if (REMIND_scenario == "SSP2") {
-    decay_RPK=0.7
+    decay_RPK=0.8
     decay_GDP=0.85
     decay_threshold= 1500
   }else if (REMIND_scenario == "SSP3") {
@@ -43,8 +43,8 @@ lvl2_demandReg <- function(tech_output, price_baseline, GDP_POP, REMIND_scenario
     decay_GDP=1
     decay_threshold= 1
   }else if (REMIND_scenario == "SSP5") {
-    decay_RPK=0.8
-    decay_GDP=0.95
+    decay_RPK=0.95
+    decay_GDP=0.99
     decay_threshold= 1500
   }else{}
   
@@ -248,11 +248,6 @@ lvl2_demandReg <- function(tech_output, price_baseline, GDP_POP, REMIND_scenario
   Aviation_data <- transform(Aviation_data, decay_rate_RPK= 1)
   Aviation_data <- transform(Aviation_data, decay_rate_GDP= 1)
   #region specific adjustments
-  iso_mapping<-fread(file.path("C:/Users/franz/Documents/R/Master-Thesis/EDGE-T/Export Data/regionmappingH12.csv"), sep=";", header = T)
-  Aviation_data<-merge(Aviation_data,iso_mapping, by = c("iso"),all.x = TRUE)
-  Aviation_data[, income_elasticity_pass_lo := ifelse(iso_region=="OAS" , IE*0.5 , income_elasticity_pass_lo) ]
-  Aviation_data[, income_elasticity_pass_lo := ifelse(iso_region=="SSA" , IE*0.5 , income_elasticity_pass_lo) ]
-  Aviation_data<-Aviation_data[,c("iso_region","name"):= NULL]
   Aviation_data[, trn_aviation_intl := ifelse( year == 2019 & iso=="BOL" , 1534.48687 , trn_aviation_intl) ]
   Aviation_data[, trn_aviation_intl := ifelse( year == 2019 & iso=="IRN" , 95905.49 , trn_aviation_intl) ]
   Aviation_data[, trn_aviation_intl := ifelse( year == 2019 & iso=="VEN" , 13363.0493, trn_aviation_intl) ]
@@ -265,29 +260,27 @@ lvl2_demandReg <- function(tech_output, price_baseline, GDP_POP, REMIND_scenario
   # y-axis= RPK captia, x-axis= GDP capita
   #General reduction for SSP1&SSP2
   #additive trigger # low thresholds
-  for (j in unique(Aviation_data$iso)) {
-    for (i in unique(Aviation_data$year)[unique(Aviation_data$year)>2019]) { 
-      #RPK-Threshold
-      if(isTRUE(any(Aviation_data[iso == j & year %in% seq(2005, i-1), RPK_Cap] > decay_threshold))) { 
-        Aviation_data[iso == j, decay_rate_RPK := ifelse(year == i, decay_rate_RPK[year == i-1] * decay_RPK, decay_rate_RPK)]
-      }
-      if (isTRUE(any(Aviation_data[iso == j & year %in% seq(2005, i-1), GDP_cap] > GDP_threshold))) { 
-        Aviation_data[iso == j, decay_rate_GDP := ifelse(year == i, decay_rate_GDP[year == i-1] * decay_GDP, decay_rate_GDP)]
-        Aviation_data[iso == j, income_elasticity_pass_lo := ifelse(year == i, income_elasticity_pass_lo[year == i-1] * decay_rate_GDP*decay_rate_RPK, income_elasticity_pass_lo)]
-      }
-      if(isTRUE(any(Aviation_data[iso == j & year %in% seq(2005, i-1), RPK_Cap] > decay_threshold)) & !isTRUE((any(Aviation_data[iso == j & year %in% seq(2005, i-1), GDP_cap] > GDP_threshold)))) { 
-        Aviation_data[iso == j, income_elasticity_pass_lo := ifelse(year == i, income_elasticity_pass_lo[year == i-1] * decay_rate_RPK, income_elasticity_pass_lo)]
-      }
-      #create GDP index with IE
-      Aviation_data[, index_GDPcap_p_lo :=index_GDPcap^income_elasticity_pass_lo]
-      #Prepare Regression
-      Aviation_data[, D_star_p_lo := index_price_p_lo*index_GDPcap_p_lo*index_POP]
-      
-      #demand regression
-      Aviation_data[iso == j, trn_aviation_intl := ifelse(year == i, trn_aviation_intl[year == i-1]*D_star_p_lo, trn_aviation_intl)]
-      #update RPK CAP
-      Aviation_data[iso == j & year == i, RPK_Cap := trn_aviation_intl / POP_val]
-    }
+  for (i in unique(Aviation_data$year)[unique(Aviation_data$year)>2019]) { 
+    #RPK-Threshold
+    Aviation_data[year %in% seq(2005, i-1), check := ifelse(RPK_Cap > decay_threshold, decay_RPK, 1), by = "iso"]
+    
+    Aviation_data[year %in% seq(2005, i-1), check_GDP := ifelse(GDP_cap > GDP_threshold, decay_GDP, 1), by = "iso"]
+    
+    Aviation_data[, decay_rate_RPK := ifelse(year == i, decay_rate_RPK[year == i-1] * check[year == i-1], decay_rate_RPK), by = "iso"]
+    Aviation_data[, decay_rate_GDP := ifelse(year == i, decay_rate_GDP[year == i-1] * check_GDP[year == i-1], decay_rate_GDP), by = "iso"]
+    
+    Aviation_data[, income_elasticity_pass_lo := ifelse(year == i, income_elasticity_pass_lo[year == i-1] * decay_rate_GDP*decay_rate_RPK, income_elasticity_pass_lo), by = "iso"]
+    
+    
+    #create GDP index with IE
+    Aviation_data[, index_GDPcap_p_lo :=index_GDPcap^income_elasticity_pass_lo, by = "iso"]
+    #Prepare Regression
+    Aviation_data[, D_star_p_lo := index_price_p_lo*index_GDPcap_p_lo*index_POP, by = "iso"]
+    
+    #demand regression
+    Aviation_data[, trn_aviation_intl := ifelse(year == i, trn_aviation_intl[year == i-1]*D_star_p_lo, trn_aviation_intl), by = "iso"]
+    #update RPK CAP
+    Aviation_data[year == i, RPK_Cap := trn_aviation_intl / POP_val, by = "iso"]
   }
   saveRDS(Aviation_data, file = "Aviation_data_post_loop.rds")
   elasticities<-Aviation_data[,c("iso","year","income_elasticity_pass_lo")]
