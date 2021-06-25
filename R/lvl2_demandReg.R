@@ -28,13 +28,13 @@ lvl2_demandReg <- function(tech_output, price_baseline, GDP_POP, REMIND_scenario
   PE = 0
   #RPK Treshold & Decay
   if (REMIND_scenario == "SSP1") {
-    decay_RPK=0.7
-    decay_GDP=0.75
-    decay_threshold= 1500
+    decay_RPK=0.85
+    decay_GDP=0.95
+    decay_threshold= 2500
   }else if (REMIND_scenario == "SSP2") {
-    decay_RPK=0.8
-    decay_GDP=0.85
-    decay_threshold= 2000
+    decay_RPK=0.90
+    decay_GDP=0.975
+    decay_threshold= 3000
   }else if (REMIND_scenario == "SSP3") {
     decay_RPK=1
     decay_GDP=1
@@ -46,7 +46,7 @@ lvl2_demandReg <- function(tech_output, price_baseline, GDP_POP, REMIND_scenario
   }else if (REMIND_scenario == "SSP5") {
     decay_RPK=0.95
     decay_GDP=0.99
-    decay_threshold= 5000
+    decay_threshold= 6000
   }else{}
   
   #GDP Threshold
@@ -54,36 +54,36 @@ lvl2_demandReg <- function(tech_output, price_baseline, GDP_POP, REMIND_scenario
   #International
   #Leisure
   if (REMIND_scenario == "SSP1") {
-    GDP_threshold= 30000
+    GDP_threshold= 40000
   }else if (REMIND_scenario == "SSP2") {
-    GDP_threshold= 30000
+    GDP_threshold= 40000
   }else if (REMIND_scenario == "SSP3") {
-    GDP_threshold= 30000
+    GDP_threshold= 40000
   }else if (REMIND_scenario == "SSP4") {
-    GDP_threshold= 30000
+    GDP_threshold= 40000
   }else if (REMIND_scenario == "SSP5") {
-    GDP_threshold= 30000
+    GDP_threshold= 40000
   }else{}
   
 
   #Domestic Derivation
   if (REMIND_scenario == "SSP1") {
-    floor_domestic_leisure = 0.5
-    floor_domestic_business = 0.4
+    floor_domestic_leisure = 0.6
+    floor_domestic_business = 0.5
     top_domestic_leisure = 1
     top_domestic_business = 1
-    special_country_floor_leisure = 0.6
-    special_country_floor_business = 0.55
+    special_country_floor_leisure = 0.7
+    special_country_floor_business = 0.65
   }else if (REMIND_scenario == "SSP2") {
-    floor_domestic_leisure = 0.5
-    floor_domestic_business = 0.4
+    floor_domestic_leisure = 0.6
+    floor_domestic_business = 0.5
     top_domestic_leisure = 1
     top_domestic_business = 1
-    special_country_floor_leisure = 0.6
-    special_country_floor_business = 0.55
+    special_country_floor_leisure = 0.7
+    special_country_floor_business = 0.65
   }else if (REMIND_scenario == "SSP3") {
-    floor_domestic_leisure = 0.4
-    floor_domestic_business = 0.3
+    floor_domestic_leisure = 0.6
+    floor_domestic_business = 0.5
     top_domestic_leisure = 1
     top_domestic_business = 1
     special_country_floor_leisure = 0.5
@@ -96,12 +96,12 @@ lvl2_demandReg <- function(tech_output, price_baseline, GDP_POP, REMIND_scenario
     special_country_floor_leisure = 0.5
     special_country_floor_business = 0.45
   }else if (REMIND_scenario == "SSP5") {
-    floor_domestic_leisure = 0.5
-    floor_domestic_business = 0.4
+    floor_domestic_leisure = 0.6
+    floor_domestic_business = 0.5
     top_domestic_leisure = 1
     top_domestic_business = 1
-    special_country_floor_leisure = 0.6
-    special_country_floor_business = 0.55
+    special_country_floor_leisure = 0.7
+    special_country_floor_business = 0.65
   }else{}
   ## Create a dt with GDP, POP and GDP_cap with EDGE isos
   gdp_pop = copy(GDP_POP)
@@ -141,6 +141,7 @@ lvl2_demandReg <- function(tech_output, price_baseline, GDP_POP, REMIND_scenario
   
  #PRICE
   #order the prices according to the year, within the sector
+  price_baseline <- transform(price_baseline, tot_price = tot_price-  tot_VOT_price)
   price_baseline=price_baseline[order(-frank(sector), year)]
   #get iso and yearly data
   price_baseline <- disaggregate_dt(price_baseline, REMIND2ISO_MAPPING,
@@ -268,8 +269,8 @@ lvl2_demandReg <- function(tech_output, price_baseline, GDP_POP, REMIND_scenario
     
     Aviation_data[year %in% seq(2005, i-1), check_GDP := ifelse(GDP_cap > GDP_threshold, decay_GDP, 1), by = "iso"]
     
-    Aviation_data[, decay_rate_RPK := ifelse(year == i, decay_rate_RPK[year == i-1] * check[year == i-1], decay_rate_RPK), by = "iso"]
-    Aviation_data[, decay_rate_GDP := ifelse(year == i, decay_rate_GDP[year == i-1] * check_GDP[year == i-1], decay_rate_GDP), by = "iso"]
+    Aviation_data[, decay_rate_RPK := ifelse(year == i, decay_rate_RPK[year == i] * check[year == i-1], decay_rate_RPK), by = "iso"]
+    Aviation_data[, decay_rate_GDP := ifelse(year == i, decay_rate_GDP[year == i] * check_GDP[year == i-1], decay_rate_GDP), by = "iso"]
     
     Aviation_data[, income_elasticity_pass_lo := ifelse(year == i, income_elasticity_pass_lo[year == i-1] * decay_rate_GDP*decay_rate_RPK, income_elasticity_pass_lo), by = "iso"]
     
@@ -365,7 +366,15 @@ lvl2_demandReg <- function(tech_output, price_baseline, GDP_POP, REMIND_scenario
   #COVID ADJUSTMENT
   ## COVID ADJUSTMENT - Totally exogenous COVID shock based on certain assumptions and actual COVID-impact data from the year 2020
   if (COVID_scenario == TRUE) {
-  COVID_shock = fread(system.file("extdata", "COVID_ext.csv", package = "edgeTransport"))
+  COVID_shock = fread(system.file("extdata", "COVID_ext_adj.csv", package = "edgeTransport"))
+  COVID_shock = melt(COVID_shock, id.vars = c("iso", "year"))
+  COVID_shock=approx_dt(dt = COVID_shock, ## database to interpolate
+                           xdata = seq(2005,2100,1), ## time steps on which to interpolate
+                           ycol = "value", ## column containing the data to interpolate
+                           xcol="year", ## x-axis of the interpolation, i.e. the years that you indeed have available
+                           idxcols=c("iso", "variable"), ## equivalent of "group_by" in dplyr and "by=.(....)" in data.table
+                           extrapolate = T) ## extrapolate? i.e. min(xdata)<min(unique(dat$year))|max(xdata)>max(unique(dat$year))
+  COVID_shock=dcast(COVID_shock,iso+year~variable,value.var="value")
   D_star=merge(D_star, COVID_shock,by = c("iso","year"), all.x = TRUE)
   ## find values to be used depending on the SSP number
   coeff_touse_L = paste0("I_L_", gsub("[^\\d]+", "", REMIND_scenario, perl=TRUE))
