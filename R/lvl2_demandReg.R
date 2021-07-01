@@ -26,6 +26,7 @@ lvl2_demandReg <- function(tech_output, price_baseline, GDP_POP, REMIND_scenario
   CONV_2005USD_1990USD = 0.67
   #PARAMETERS FOR ELASTICITY
   PE = 0
+  IE = 1.546
   #RPK Treshold & Decay
   if (REMIND_scenario == "SSP1") {
     decay_RPK=0.85
@@ -243,7 +244,6 @@ lvl2_demandReg <- function(tech_output, price_baseline, GDP_POP, REMIND_scenario
   demand_tot_sector_avi<-na.omit(demand_tot_sector_avi)
   #from long to wide format, so that the df has separate columns for all transport modes
   #merge all data for demand regression
-  IE = 1.5
   Aviation_data<-merge(gdp_pop[,c(1,2,3,5,7,8)],demand_tot_sector_avi, by = c("iso","year"),all.x = TRUE)
   Aviation_data<-merge(Aviation_data,price_baseline[,c(1,2,7)], by = c("iso","year"),all.x = TRUE)
   Aviation_data <- transform(Aviation_data, income_elasticity_pass_lo = IE)
