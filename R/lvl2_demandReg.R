@@ -31,11 +31,11 @@ lvl2_demandReg <- function(tech_output, price_baseline, GDP_POP, REMIND_scenario
   if (REMIND_scenario == "SSP1") {
     decay_RPK=0.85
     decay_GDP=0.95
-    decay_threshold= 2500
+    decay_threshold= 2000
   }else if (REMIND_scenario == "SSP2") {
     decay_RPK=0.90
     decay_GDP=0.975
-    decay_threshold= 3000
+    decay_threshold= 4000
   }else if (REMIND_scenario == "SSP3") {
     decay_RPK=1
     decay_GDP=1
@@ -139,8 +139,9 @@ lvl2_demandReg <- function(tech_output, price_baseline, GDP_POP, REMIND_scenario
   gdp_pop=dcast(gdp_pop,iso+year~variable,value.var="value")
   #calculate growth rates
   gdp_pop[,`:=`(index_GDP=GDP_val/shift(GDP_val), index_GDPcap=GDP_cap/shift(GDP_cap), index_POP=POP_val/shift(POP_val)), by=c("iso")]
-  
  #PRICE
+  price_baseline = price_baseline
+  saveRDS(price_baseline, file= "price_baseline.rds")
   #order the prices according to the year, within the sector
   price_baseline <- transform(price_baseline, tot_price = tot_price-  tot_VOT_price)
   price_baseline=price_baseline[order(-frank(sector), year)]
@@ -219,12 +220,12 @@ lvl2_demandReg <- function(tech_output, price_baseline, GDP_POP, REMIND_scenario
   IATA_data[, share := ifelse( year == 2009 , 0.98 , share) ]
   IATA_data[, share := ifelse( year == 2010 , 1.08, share) ]
   IATA_data[, share := ifelse( year == 2011 , 1.07 , share) ]
-  IATA_data[, share := ifelse( year == 2012 , 1.08 , share) ]
+  IATA_data[, share := ifelse( year == 2012 , 1.09 , share) ]
   IATA_data[, share := ifelse( year == 2013 , 1.07 , share) ]
   IATA_data[, share := ifelse( year == 2014 , 1.08 , share) ]
-  IATA_data[, share := ifelse( year == 2015 , 1.07 , share) ]
-  IATA_data[, share := ifelse( year == 2016 , 1.07 , share) ]
-  IATA_data[, share := ifelse( year == 2017 , 1.08 , share) ]
+  IATA_data[, share := ifelse( year == 2015 , 1.08 , share) ]
+  IATA_data[, share := ifelse( year == 2016 , 1.08 , share) ]
+  IATA_data[, share := ifelse( year == 2017 , 1.09 , share) ]
   IATA_data[, share := ifelse( year == 2018 , 1.09 , share) ]
   IATA_data[, share := ifelse( year == 2019 , 1.06 , share) ]
   IATA_data[, share := ifelse( year == 2020 , 1.08 , share) ]
